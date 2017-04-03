@@ -21,10 +21,14 @@ import threading
 import chess
 import chess.pgn as pgn
 
+import uuid
+
 import tornado.web
 import tornado.wsgi
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
+import tornado.locks
+import tornado.gen
 
 from utilities import Observable, DisplayMsg, switch, hours_minutes_seconds, RepeatedTimer
 import logging
@@ -38,7 +42,9 @@ from dgtboard import DgtBoard
 
 # This needs to be reworked to be session based (probably by token)
 # Otherwise multiple clients behind a NAT can all play as the 'player'
-client_ips = []
+# client_ips = []
+
+lock = tornado.locks.Lock()
 
 
 class ServerRequestHandler(tornado.web.RequestHandler):
@@ -94,34 +100,97 @@ class ChannelHandler(ServerRequestHandler):
 
 
 class EventHandler(WebSocketHandler):
-    clients = set()
+    clients = {}
+    shared = {}
 
-    def initialize(self, shared=None):
-        self.shared = shared
-
-    def on_message(self, message):
-        pass
-
-    def data_received(self, chunk):
-        pass
-
-    def real_ip(self):
-        x_real_ip = self.request.headers.get('X-Real-IP')
-        real_ip = x_real_ip if x_real_ip else self.request.remote_ip
-        return real_ip
-
-    def open(self):
-        EventHandler.clients.add(self)
-        client_ips.append(self.real_ip())
-
-    def on_close(self):
-        EventHandler.clients.remove(self)
-        client_ips.remove(self.real_ip())
+    def __init__(self, application, request, **kwargs):
+        WebSocketHandler.__init__(self, application, request, **kwargs)
+        self.uuid = None
 
     @classmethod
-    def write_to_clients(cls, msg):
-        for client in cls.clients:
-            client.write_message(msg)
+    def send_messages(cls, doc_uuid):
+        clients_with_uuid = cls.clients[doc_uuid]
+        logging.info("sending message to %d clients", len(clients_with_uuid))
+
+        message = cls.make_message(doc_uuid)
+
+        for client in clients_with_uuid:
+            try:
+                client.write_message(message)
+            except:
+                logging.error("Error sending message", exc_info=True)
+
+    @classmethod
+    def send_message(cls, doc_uuid, client):
+        clients_with_uuid = cls.clients[doc_uuid]
+        logging.info("sending message to %d clients", len(clients_with_uuid))
+
+        message = cls.make_message(doc_uuid)
+        client.write_message(message)
+
+    @classmethod
+    def make_message(cls, doc_uuid):
+        return cls.shared[doc_uuid]
+
+    @classmethod
+    @tornado.gen.coroutine
+    def add_clients(cls, doc_uuid, client):
+        logging.info("add a client with (uuid: %s)" % doc_uuid)
+
+        # locking clients
+        with (yield lock.acquire()):
+            if doc_uuid in cls.clients:
+                clients_with_uuid = EventHandler.clients[doc_uuid]
+                clients_with_uuid.append(client)
+            else:
+                EventHandler.clients[doc_uuid] = [client]
+
+    @classmethod
+    @tornado.gen.coroutine
+    def remove_clients(cls, doc_uuid, client):
+        logging.info("remove a client with (uuid: %s)" % doc_uuid)
+
+        # locking clients
+        with (yield lock.acquire()):
+            if doc_uuid in cls.clients:
+                clients_with_uuid = EventHandler.clients[doc_uuid]
+                clients_with_uuid.remove(client)
+
+                if len(clients_with_uuid) == 0:
+                    del cls.clients[doc_uuid]
+            if doc_uuid not in cls.clients and doc_uuid in cls.shared:
+                del cls.shared[doc_uuid]
+
+    def check_origin(self, origin):
+        return True
+
+    def open(self, doc_uuid=None):
+        logging.info("open a websocket (uuid: %s)" % doc_uuid)
+
+        if doc_uuid is None:
+            # Generate a random UUID
+            self.uuid = str(uuid.uuid4())
+            logging.info("new client with (uuid: %s)" % self.uuid)
+        else:
+            self.uuid = doc_uuid
+            EventHandler.send_message(self.uuid, self)
+            logging.info("new client sharing (uuid: %s)" % self.uuid)
+
+        EventHandler.add_clients(self.uuid, self)
+
+    def on_close(self):
+        logging.info("close a websocket")
+        EventHandler.remove_clients(self.uuid, self)
+
+    def on_message(self, message):
+        logging.info("got message (uuid: %s)" % self.uuid)
+        EventHandler.shared[self.uuid] = message
+        EventHandler.send_messages(self.uuid)
+
+    def write_to_clients(self, msg):
+        self.write_message(msg)
+        # for client in cls.clients:
+        #     client.write_message(msg)
 
 
 class DGTHandler(ServerRequestHandler):
@@ -150,8 +219,9 @@ class InfoHandler(ServerRequestHandler):
 
 
 class ChessBoardHandler(ServerRequestHandler):
-    def get(self):
-        self.render('web/picoweb/templates/clock.html')
+    def get(self, doc_uuid=""):
+        logging.info("index with (uuid: %s)" % doc_uuid)
+        self.render('clock.html')
 
 
 class WebServer(threading.Thread):
@@ -161,23 +231,31 @@ class WebServer(threading.Thread):
         WebDisplay(shared).start()
         WebVr(shared, dgttranslate, dgtboard).start()
         super(WebServer, self).__init__()
-        wsgi_app = tornado.wsgi.WSGIContainer(pw)
+        # wsgi_app = tornado.wsgi.WSGIContainer(pw)
+
+        settings = dict(
+            cookie_secret="SX4gEWPE6bVr0vbwGtMl",
+            template_path="web/picoweb/templates",
+            static_path="web/picoweb/static",
+            xsrf_cookies=True,
+            debug=True
+        )
 
         application = tornado.web.Application([
             (r'/', ChessBoardHandler, dict(shared=shared)),
-            (r'/event', EventHandler, dict(shared=shared)),
+            (r'/event', EventHandler),
             (r'/dgt', DGTHandler, dict(shared=shared)),
             (r'/info', InfoHandler, dict(shared=shared)),
 
             (r'/channel', ChannelHandler, dict(shared=shared)),
-            (r'.*', tornado.web.FallbackHandler, {'fallback': wsgi_app})
-        ])
+            # (r'.*', tornado.web.FallbackHandler, {'fallback': wsgi_app})
+        ], **settings)
         application.listen(port)
 
     def run(self):
         """called from threading.Thread by its start() function."""
         logging.info('evt_queue ready')
-        IOLoop.instance().start()
+        IOLoop.instance().current().start()
 
 
 class WebVr(DgtIface):
@@ -384,7 +462,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_game = pgn.Game()
             _create_game_header(pgn_game)
             self.shared['headers'] = pgn_game.headers
-            EventHandler.write_to_clients({'event': 'Header', 'headers': pgn_game.headers})
+            EventHandler.send_messages({'event': 'Header', 'headers': pgn_game.headers})
 
         def _update_title():
             EventHandler.write_to_clients({'event': 'Title', 'ip_info': self.shared['ip_info']})

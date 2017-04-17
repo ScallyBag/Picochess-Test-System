@@ -82,6 +82,7 @@ class DgtMenu(object):
     def __init__(self, disable_confirm_message: bool, ponder_interval: int, dgttranslate: DgtTranslate):
         super(DgtMenu, self).__init__()
 
+        self.current_text = None  # save the current text
         self.menu_system_display_confirm = disable_confirm_message
         self.menu_system_display_ponderinterval = ponder_interval
         self.dgttranslate = dgttranslate
@@ -185,8 +186,7 @@ class DgtMenu(object):
 
         self.res_system_display_confirm = self.menu_system_display_confirm
         self.res_system_display_ponderinterval = self.menu_system_display_ponderinterval
-
-        return None
+        return False
 
     def set_engine_restart(self, flag: bool):
         self.engine_restart = flag
@@ -266,7 +266,8 @@ class DgtMenu(object):
 
     def enter_top_menu(self):
         self.state = MenuState.TOP
-        return None
+        self.current_text = None
+        return False
 
     def enter_mode_menu(self):
         self.state = MenuState.MODE
@@ -591,6 +592,7 @@ class DgtMenu(object):
                 break
             if case():  # Default
                 break
+        self.current_text = text
         return text
 
     def down(self):
@@ -882,6 +884,7 @@ class DgtMenu(object):
                 break
             if case():  # Default
                 break
+        self.current_text = text
         return text
 
     def left(self):
@@ -1074,6 +1077,7 @@ class DgtMenu(object):
                 break
             if case():  # Default
                 break
+        self.current_text = text
         return text
 
     def right(self):
@@ -1266,7 +1270,11 @@ class DgtMenu(object):
                 break
             if case():  # Default
                 break
+        self.current_text = text
         return text
 
     def inside_menu(self):
         return self.state != MenuState.TOP
+
+    def get_current_text(self):
+        return self.current_text

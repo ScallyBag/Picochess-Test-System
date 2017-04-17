@@ -96,7 +96,6 @@ class ChannelHandler(ServerRequestHandler):
             Observable.fire(Event.KEYBOARD_BUTTON(button=self.get_argument('button'), dev='web'))
         elif action == 'command':
             self.process_console_command(self.get_argument('command'))
-            pass
 
 
 class EventHandler(WebSocketHandler):
@@ -278,30 +277,33 @@ class WebVr(DgtIface):
 
     def _runclock(self):
         if self.time_side == ClockSide.LEFT:
-            h, m, s = self.time_left
-            time_left = 3600*h + 60*m + s - 1
+            hours, mins, secs = self.time_left
+            time_left = 3600*hours + 60*mins + secs - 1
             if time_left <= 0:
-                logging.info('time left is negative {}'.format(time_left))
+                logging.info('negative/zero time left: {}'.format(time_left))
                 self.virtual_timer.stop()
                 self.time_left = 0
             self.time_left = hours_minutes_seconds(time_left)
         if self.time_side == ClockSide.RIGHT:
-            h, m, s = self.time_right
-            time_right = 3600*h + 60*m + s - 1
+            hours, mins, secs = self.time_right
+            time_right = 3600*hours + 60*mins + secs - 1
             if time_right <= 0:
-                logging.info('time right is negative {}'.format(time_right))
+                logging.info('negative/zero time right: {}'.format(time_right))
                 self.virtual_timer.stop()
                 self.time_right = 0
             self.time_right = hours_minutes_seconds(time_right)
-        self.display_time(self.time_left, self.time_right)
+        self._display_time(self.time_left, self.time_right)
 
-    def display_time(self, time_l, time_r):
+    def _display_time(self, time_l, time_r):
         if time_l is None or time_r is None:
             logging.debug('time values not set - abort function')
         elif self.clock_show_time:
             text_l = '{}:{:02d}.{:02d}'.format(time_l[0], time_l[1], time_l[2])
             text_r = '{}:{:02d}.{:02d}'.format(time_r[0], time_r[1], time_r[2])
-            text = text_l + '&nbsp;&nbsp;' + text_r
+            icon_d = 'fa-caret-right' if self.time_side == ClockSide.RIGHT else 'fa-caret-left'
+            if self.time_side == ClockSide.NONE:
+                icon_d = 'fa-sort'
+            text = text_l + '&nbsp;<i class="fa ' + icon_d + '"></i>&nbsp;' + text_r
             self._create_clock_text()
             self.shared['clock_text'] = text
             result = {'event': 'Clock', 'msg': text}
@@ -353,7 +355,7 @@ class WebVr(DgtIface):
             return
         if self.clock_running or message.force:
             self.clock_show_time = True
-            self.display_time(self.time_left, self.time_right)
+            self._display_time(self.time_left, self.time_right)
         else:
             logging.debug('(web) clock isnt running - no need for endText')
 
@@ -385,11 +387,11 @@ class WebVr(DgtIface):
         # simulate the "start_clock" function from dgthw/pi
         self.time_left = hours_minutes_seconds(time_left)
         self.time_right = hours_minutes_seconds(time_right)
-        self.display_time(self.time_left, self.time_right)
+        self._display_time(self.time_left, self.time_right)
 
     def light_squares_revelation_board(self, squares):
-        """handle this by dgthw.py."""
-        pass
+        result = {'event': 'Light', 'move': squares}
+        EventHandler.write_to_clients(result)
 
     def clear_light_revelation_board(self):
         result = {'event': 'Clear'}
@@ -476,9 +478,9 @@ class WebDisplay(DisplayMsg, threading.Thread):
             if case(MessageApi.START_NEW_GAME):
                 pgn_str = _transfer(message.game)
                 fen = message.game.fen()
-                result = {'pgn': pgn_str, 'fen': fen}
+                result = {'pgn': pgn_str, 'fen': fen, 'event': 'Game', 'move': '0000', 'play': 'newgame'}
                 self.shared['last_dgt_move_msg'] = result
-                EventHandler.write_to_clients({'event': 'Game', 'fen': fen})
+                EventHandler.write_to_clients(result)
                 _update_headers()
                 break
             if case(MessageApi.IP_INFO):
@@ -551,16 +553,19 @@ class WebDisplay(DisplayMsg, threading.Thread):
                 EventHandler.write_to_clients(result)
                 break
             if case(MessageApi.COMPUTER_MOVE):
-                pgn_str = _transfer(message.game)
-                fen = _oldstyle_fen(message.game)
+                game_copy = message.game.copy()
+                game_copy.push(message.move)
+                pgn_str = _transfer(game_copy)
+                fen = _oldstyle_fen(game_copy)
                 mov = message.move.uci()
                 result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'computer'}
-                self.shared['last_dgt_move_msg'] = result
+                self.shared['last_dgt_move_msg'] = result  # not send => keep it for COMPUTER_MOVE_DONE
+                break
+            if case(MessageApi.COMPUTER_MOVE_DONE):
+                result = self.shared['last_dgt_move_msg']
                 EventHandler.write_to_clients(result)
                 break
-            if case(MessageApi.COMPUTER_MOVE_DONE_ON_BOARD):
-                break
-            if case(MessageApi.USER_MOVE):
+            if case(MessageApi.USER_MOVE_DONE):
                 pgn_str = _transfer(message.game)
                 fen = _oldstyle_fen(message.game)
                 mov = message.move.uci()
@@ -568,7 +573,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
                 self.shared['last_dgt_move_msg'] = result
                 EventHandler.write_to_clients(result)
                 break
-            if case(MessageApi.REVIEW_MOVE):
+            if case(MessageApi.REVIEW_MOVE_DONE):
                 pgn_str = _transfer(message.game)
                 fen = _oldstyle_fen(message.game)
                 mov = message.move.uci()
@@ -588,6 +593,14 @@ class WebDisplay(DisplayMsg, threading.Thread):
                 pgn_str = _transfer(message.game)
                 fen = _oldstyle_fen(message.game)
                 mov = message.move.uci()
+                result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
+                self.shared['last_dgt_move_msg'] = result
+                EventHandler.write_to_clients(result)
+                break
+            if case(MessageApi.TAKE_BACK):
+                pgn_str = _transfer(message.game)
+                fen = _oldstyle_fen(message.game)
+                mov = message.game.peek().uci()
                 result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
                 self.shared['last_dgt_move_msg'] = result
                 EventHandler.write_to_clients(result)

@@ -62,7 +62,7 @@ var setupBoardFen = START_FEN;
 var DataTableFen = START_FEN;
 
 function updateDGTPosition(data) {
-    if (!goToPosition(data.fen) || data.play == 'reload') {
+    if (!goToPosition(data.fen) || data.play === 'reload') {
         loadGame(data['pgn'].split("\n"));
         goToPosition(data.fen);
     }
@@ -128,9 +128,7 @@ function goToDGTFen() {
     $.get('/dgt', {action: 'get_last_move'}, function(data) {
         if (data) {
             updateDGTPosition(data);
-            if (data['msg']) {
-                boardStatusEl.html(data['msg']);
-            }
+            highlightBoard(data.move, data.play);
         }
     }).fail(function(jqXHR, textStatus) {
         dgtClockStatusEl.html(textStatus);
@@ -191,6 +189,7 @@ BookDataTable.on('select', function( e, dt, type, indexes ) {
         updateCurrentPosition(move, tmp_game);
         board.position(currentPosition.fen);
         updateStatus();
+        remove_highlights();
     }
 });
 
@@ -285,6 +284,7 @@ GameDataTable.on('select', function( e, dt, type, indexes ) {
         }).done(function(data) {
             loadGame(data['pgn']);
             updateStatus();
+            remove_highlights();
         });
     }
 });
@@ -299,7 +299,7 @@ $(function() {
     window.multipv = 1;
 
     $(document).keydown(function(e) {
-        if (e.keyCode == 39) { //right arrow
+        if (e.keyCode === 39) { //right arrow
             if (e.ctrlKey) {
                 $('#endBtn').click();
             } else {
@@ -310,7 +310,7 @@ $(function() {
     });
 
     $(document).keydown(function(e) {
-        if (e.keyCode == 37) { //left arrow
+        if (e.keyCode === 37) { //left arrow
             if (e.ctrlKey) {
                 $('#startBtn').click();
             } else {
@@ -334,7 +334,15 @@ $(function() {
                 case 'Fen':
                     updateDGTPosition(data);
                     updateStatus();
-                    highlightBoard(data.move, data.play);
+                    if(data.play === 'reload') {
+                        remove_highlights();
+                    }
+                    if(data.play === 'user') {
+                        highlightBoard(data.move, 'user');
+                    }
+                    if(data.play === 'review') {
+                        highlightBoard(data.move, 'review');
+                    }
                     break;
                 case 'Game':
                     newBoard(data.fen);
@@ -347,6 +355,9 @@ $(function() {
                     break;
                 case 'Status':
                     dgtClockStatusEl.html(data.msg);
+                    break;
+                case 'Light':
+                    highlightBoard(data.move, 'computer');
                     break;
                 case 'Clear':
                     remove_highlights();
@@ -391,6 +402,7 @@ function remove_highlights() {
     $('#board div.highlight-user').removeClass('highlight-user');
     $('#board div.highlight-review').removeClass('highlight-review');
 }
+
 function add_highlight(square, color) {
     $('#board [data-square="' + square + '"]').addClass('highlight-' +  color);
 }
@@ -511,7 +523,7 @@ function WebExporter(columns) {
     };
 
     this.put_fullmove_number = function(turn, fullmove_number, variation_start) {
-        if (turn == 'w') {
+        if (turn === 'w') {
             this.write_token(String(fullmove_number) + ". ");
         }
         else if (variation_start) {
@@ -624,7 +636,7 @@ function PGNExporter(columns) {
     };
 
     this.put_fullmove_number = function(turn, fullmove_number, variation_start) {
-        if (turn == 'w') {
+        if (turn === 'w') {
             this.write_token(String(fullmove_number) + ". ");
         }
         else if (variation_start) {
@@ -849,7 +861,7 @@ var cfg = {
 board = new ChessBoard('board', cfg);
 $(window).resize(board.resize);
 
-$('#flipOrientationBtn').on('click', board.flip);
+$('#flipOrientationBtn').on('click', boardFlip);
 $('#backBtn').on('click', goBack);
 $('#fwdBtn').on('click', goForward);
 $('#startBtn').on('click', goToStart);
@@ -981,10 +993,10 @@ function loadGame(pgn_lines) {
         var token = result[0];
         var comment;
 
-        if (token == '1-0' || token == '0-1' || token == '1/2-1/2' || token == '*') {
+        if (token === '1-0' || token === '0-1' || token === '1/2-1/2' || token === '*') {
             game_headers['Result'] = token;
         }
-        else if (token[0] == '{') {
+        else if (token[0] === '{') {
             last_variation_stack_index = variation_stack.length - 1;
 
             comment = token.substring(1, token.length - 1);
@@ -1007,7 +1019,7 @@ function loadGame(pgn_lines) {
                 comment = undefined;
             }
         }
-        else if (token == '(') {
+        else if (token === '(') {
             last_board_stack_index = board_stack.length - 1;
             last_variation_stack_index = variation_stack.length - 1;
 
@@ -1018,31 +1030,31 @@ function loadGame(pgn_lines) {
                 in_variation = false;
             }
         }
-        else if (token == ')') {
+        else if (token === ')') {
             if (variation_stack.length > 1) {
                 variation_stack.pop();
                 board_stack.pop();
             }
         }
-        else if (token[0] == '$') {
+        else if (token[0] === '$') {
             variation_stack[variation_stack.length - 1].nags.push(token.slice(1));
         }
-        else if (token == '?') {
+        else if (token === '?') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_MISTAKE);
         }
-        else if (token == '??') {
+        else if (token === '??') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_BLUNDER);
         }
-        else if (token == '!') {
+        else if (token === '!') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_GOOD_MOVE);
         }
-        else if (token == '!!') {
+        else if (token === '!!') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_BRILLIANT_MOVE);
         }
-        else if (token == '!?') {
+        else if (token === '!?') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_SPECULATIVE_MOVE);
         }
-        else if (token == '?!') {
+        else if (token === '?!') {
             variation_stack[variation_stack.length - 1].nags.push(NAG_DUBIOUS_MOVE);
         }
         else {
@@ -1228,6 +1240,7 @@ function toggleConsoleButton() {
 function goToGameFen() {
     var fen = $(this).attr('data-fen');
     goToPosition(fen);
+    remove_highlights();
 }
 
 function goToPosition(fen) {
@@ -1277,6 +1290,10 @@ function goBack() {
     updateStatus();
 }
 
+function boardFlip() {
+    board.flip();
+}
+
 function formatEngineOutput(line) {
     if (line.search('depth') > 0 && line.search('currmove') < 0) {
         var analysis_game = new Chess();
@@ -1298,16 +1315,24 @@ function formatEngineOutput(line) {
             multipv = Number(tokens[multipv_index + 1]);
         }
 
-        var score = tokens[score_index];
-        if (score == 'cp') {
+        var token = tokens[score_index];
+        var score = '?';
+        if (token === 'mate') {
+            score = '#' + token + tokens[score_index + 1];
+        }
+        else {
             score = (tokens[score_index + 1] / 100.0).toFixed(2);
-            if (analysis_game.turn() == 'b') {
+            if (analysis_game.turn() === 'b') {
                 score *= -1;
             }
+            if (token === 'lowerbound') {
+                score = '>' + score;
+            }
+            if (token === 'upperbound') {
+                score = '<' + score;
+            }
         }
-        else if (score == 'mate') {
-            score = '#' + score;
-        }
+
         var pv_index = tokens.indexOf('pv') + 1;
 
         var pv_out = tokens.slice(pv_index);
@@ -1316,7 +1341,7 @@ function formatEngineOutput(line) {
             var from = pv_out[i].slice(0, 2);
             var to = pv_out[i].slice(2, 4);
             var promotion = '';
-            if (pv_out[i].length == 5) {
+            if (pv_out[i].length === 5) {
                 promotion = pv_out[i][4];
             }
             if (promotion) {
@@ -1330,7 +1355,7 @@ function formatEngineOutput(line) {
         window.engine_lines['import_pv_' + multipv] = {score: score, depth: depth, line: history};
 
         var turn_sep = '';
-        if (start_move_num % 2 == 0) {
+        if (start_move_num % 2 === 0) {
             turn_sep = '..';
         }
 
@@ -1346,7 +1371,7 @@ function formatEngineOutput(line) {
         }
         output += '<p class="list-group-item-text">' + turn_sep;
         for (i = 0; i < history.length; ++i) {
-            if ((start_move_num + i) % 2 == 1) {
+            if ((start_move_num + i) % 2 === 1) {
                 output += Math.floor((start_move_num + i + 1) / 2) + ". ";
             }
             if (history[i]) {
@@ -1476,9 +1501,9 @@ function getPreviousMoves(node, format) {
     format = format || 'raw';
 
     if (node.previous) {
-        if (format == 'san') {
+        if (format === 'san') {
             var san = '';
-            if (node.half_move_num % 2 == 1) {
+            if (node.half_move_num % 2 === 1) {
                 san += Math.floor((node.half_move_num + 1) / 2) + ". "
             }
             san += node.move.san;
@@ -1494,7 +1519,7 @@ function getPreviousMoves(node, format) {
 
 function analyze(position_update) {
     if (!position_update) {
-        if ($('#AnalyzeText').text() == 'Analyze') {
+        if ($('#AnalyzeText').text() === 'Analyze') {
             window.analysis = true;
             $('#AnalyzeText').text('Stop');
         }

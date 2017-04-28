@@ -129,7 +129,14 @@ class EventHandler(WebSocketHandler):
 
     @classmethod
     def make_message(cls, doc_uuid):
-        return cls.shared[doc_uuid]
+        return {
+            'uuid': doc_uuid,
+            'data': cls.shared[doc_uuid]
+        }
+
+    @classmethod
+    def load_file(cls, doc_uuid, file):
+        cls.shared[doc_uuid] = file
 
     @classmethod
     @tornado.gen.coroutine
@@ -163,6 +170,10 @@ class EventHandler(WebSocketHandler):
     def check_origin(self, origin):
         return True
 
+    def get_compression_options(self):
+        # Non-None enables compression with default options.
+        return {}
+
     def open(self, doc_uuid=None):
         logging.info("open a websocket (uuid: %s)" % doc_uuid)
 
@@ -183,13 +194,12 @@ class EventHandler(WebSocketHandler):
 
     def on_message(self, message):
         logging.info("got message (uuid: %s)" % self.uuid)
-        EventHandler.shared[self.uuid] = message
+        EventHandler.load_file(self.uuid, message)
         EventHandler.send_messages(self.uuid)
 
-    def write_to_clients(self, msg):
-        self.write_message(msg)
-        # for client in cls.clients:
-        #     client.write_message(msg)
+    @classmethod
+    def write_to_clients(cls, res_dict):
+        print(res_dict)
 
 
 class DGTHandler(ServerRequestHandler):
@@ -464,7 +474,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_game = pgn.Game()
             _create_game_header(pgn_game)
             self.shared['headers'] = pgn_game.headers
-            EventHandler.send_messages({'event': 'Header', 'headers': pgn_game.headers})
+            EventHandler.write_to_clients({'event': 'Header', 'headers': pgn_game.headers})
 
         def _update_title():
             EventHandler.write_to_clients({'event': 'Title', 'ip_info': self.shared['ip_info']})

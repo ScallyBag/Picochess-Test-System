@@ -36,17 +36,17 @@ from utilities import Observable, DisplayMsg, version, switch, evt_queue
 import logging
 import time
 import queue
-from dgtapi import Message, Event, EventApi
-from dgtutil import GameResult, TimeMode, Mode, PlayMode
+from dgt.api import Message, Event, EventApi
+from dgt.util import GameResult, TimeMode, Mode, PlayMode
 from pgn import Emailer, PgnDisplay
 from server import WebServer
 
-from dgthw import DgtHw
-from dgtpi import DgtPi
-from dgtdisplay import DgtDisplay
-from dgtboard import DgtBoard
-from dgttranslate import DgtTranslate
-from dgtmenu import DgtMenu
+from dgt.hw import DgtHw
+from dgt.pi import DgtPi
+from dgt.display import DgtDisplay
+from dgt.board import DgtBoard
+from dgt.translate import DgtTranslate
+from dgt.menu import DgtMenu
 from dispatcher import Dispatcher
 
 from logging.handlers import RotatingFileHandler
@@ -236,7 +236,7 @@ def main():
 
         logging.debug('user move [%s]', move)
         if move not in game.legal_moves:
-            logging.warning('Illegal move [%s]', move)
+            logging.warning('illegal move [%s]', move)
         else:
             stop_search_and_clock()
 
@@ -272,7 +272,7 @@ def main():
                     DisplayMsg.show(msg)
 
     def is_not_user_turn(turn):
-        """Is it users turn (only valid in normal or remote mode)."""
+        """Return if it is users turn (only valid in normal or remote mode)."""
         condition1 = (play_mode == PlayMode.USER_WHITE and turn == chess.BLACK)
         condition2 = (play_mode == PlayMode.USER_BLACK and turn == chess.WHITE)
         return condition1 or condition2
@@ -298,30 +298,30 @@ def main():
                 if is_not_user_turn(game.turn):
                     stop_search()
                     game.pop()
-                    logging.debug('User move in computer turn, reverting to: ' + game.board_fen())
+                    logging.debug('user move in computer turn, reverting to: ' + game.board_fen())
                 elif done_computer_fen:
                     done_computer_fen = None
                     done_move = chess.Move.null()
                     game.pop()
-                    logging.debug('User move while computer move is displayed, reverting to: ' + game.board_fen())
+                    logging.debug('user move while computer move is displayed, reverting to: ' + game.board_fen())
                 else:
                     handled_fen = False
                     logging.error("last_legal_fens not cleared: " + game.board_fen())
             elif interaction_mode == Mode.REMOTE:
                 if is_not_user_turn(game.turn):
                     game.pop()
-                    logging.debug('User move in remote turn, reverting to: ' + game.board_fen())
+                    logging.debug('user move in remote turn, reverting to: ' + game.board_fen())
                 elif done_computer_fen:
                     done_computer_fen = None
                     done_move = chess.Move.null()
                     game.pop()
-                    logging.debug('User move while remote move is displayed, reverting to: ' + game.board_fen())
+                    logging.debug('user move while remote move is displayed, reverting to: ' + game.board_fen())
                 else:
                     handled_fen = False
                     logging.error('last_legal_fens not cleared: ' + game.board_fen())
             else:
                 game.pop()
-                logging.debug('Wrong color move -> sliding, reverting to: ' + game.board_fen())
+                logging.debug('wrong color move -> sliding, reverting to: ' + game.board_fen())
             legal_moves = list(game.legal_moves)
             move = legal_moves[last_legal_fens.index(fen)]  # type: chess.Move
             user_move(move)
@@ -367,8 +367,8 @@ def main():
                 game_history.pop()
                 if game_history.board_fen() == fen:
                     handled_fen = True
-                    logging.debug("Current game FEN      : {}".format(game.fen()))
-                    logging.debug("Undoing game until FEN: {}".format(fen))
+                    logging.debug("current game fen      : {}".format(game.fen()))
+                    logging.debug("undoing game until fen: {}".format(fen))
                     stop_search_and_clock()
                     while len(game_history.move_stack) < len(game.move_stack):
                         game.pop()
@@ -426,19 +426,19 @@ def main():
 
     def transfer_time(time_list: list):
         """Transfer the time list to a TimeControl Object and a Text Object."""
-        def num(time_str):
+        def _num(time_str):
             try:
                 return int(time_str)
             except ValueError:
                 return 1
 
         if len(time_list) == 1:
-            fixed = num(time_list[0])
+            fixed = _num(time_list[0])
             timec = TimeControl(TimeMode.FIXED, fixed=fixed)
             textc = dgttranslate.text('B00_tc_fixed', '{:2d}'.format(fixed))
         elif len(time_list) == 2:
-            blitz = num(time_list[0])
-            fisch = num(time_list[1])
+            blitz = _num(time_list[0])
+            fisch = _num(time_list[1])
             if fisch == 0:
                 timec = TimeControl(TimeMode.BLITZ, blitz=blitz)
                 textc = dgttranslate.text('B00_tc_blitz', '{:2d}'.format(blitz))
@@ -515,7 +515,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version='%(prog)s version {}'.format(version),
                         help='show current version', default=None)
     parser.add_argument('-pi', '--dgtpi', action='store_true', help='use the dgtpi hardware')
-    parser.add_argument('-pt', '--ponder-interval', type=int, default=3, choices=range(1,9),
+    parser.add_argument('-pt', '--ponder-interval', type=int, default=3, choices=range(1, 9),
                         help='how long each part of ponder display should be visible (default=3secs)')
     parser.add_argument('-lang', '--language', choices=['en', 'de', 'nl', 'fr', 'es', 'it'], default='en',
                         help='picochess language')
@@ -567,20 +567,19 @@ def main():
 
     if args.console:
         # Enable keyboard input and terminal display
-        logging.debug('starting picochess in virtual mode')
+        logging.debug('starting PicoChess in virtual mode')
     else:
         # Connect to DGT board
-        logging.debug('starting picochess in board mode')
+        logging.debug('starting PicoChess in board mode')
         if args.dgtpi:
             DgtPi(dgttranslate).start()
         DgtHw(dgttranslate, dgtboard).start()
     # The class Dispatcher sends DgtApi messages at the correct (delayed) time out
     Dispatcher().start()
     # Save to PGN
-    emailer = Emailer(
-        email=args.email, mailgun_key=args.mailgun_key,
-        smtp_server=args.smtp_server, smtp_user=args.smtp_user,
-        smtp_pass=args.smtp_pass, smtp_encryption=args.smtp_encryption, smtp_from=args.smtp_from)
+    emailer = Emailer(email=args.email, mailgun_key=args.mailgun_key)
+    emailer.set_smtp(sserver=args.smtp_server, suser=args.smtp_user, spass=args.smtp_pass,
+                     sencryption=args.smtp_encryption, sfrom=args.smtp_from)
 
     PgnDisplay('games' + os.sep + args.pgn_file, emailer).start()
     if args.pgn_user:
@@ -673,7 +672,7 @@ def main():
                         game_copy = game.copy()
                         game_copy.push(move)
                         fen = game_copy.board_fen()
-                        DisplayMsg.show(Message.DGT_FEN(fen=fen))
+                        DisplayMsg.show(Message.DGT_FEN(fen=fen, raw=False))
                     break
 
                 if case(EventApi.LEVEL):
@@ -829,9 +828,8 @@ def main():
                         else:
                             play_mode = PlayMode.USER_WHITE if game.turn == chess.BLACK else PlayMode.USER_BLACK
 
-                        text = dgttranslate.text(play_mode.value)
-                        # DisplayMsg.show(Message.PLAY_MODE(play_mode=play_mode, play_mode_text=text))
-                        msg = Message.PLAY_MODE(play_mode=play_mode, play_mode_text=text)
+                        text = play_mode.value  # type: str
+                        msg = Message.PLAY_MODE(play_mode=play_mode, play_mode_text=dgttranslate.text(text))
 
                         if not user_to_move and check_game_state(game, play_mode):
                             time_control.reset_start_time()
@@ -889,7 +887,7 @@ def main():
                     if game.is_legal(event.pv[0]):
                         DisplayMsg.show(Message.NEW_PV(pv=event.pv, mode=interaction_mode, game=game.copy()))
                     else:
-                        logging.info('illegal move can not be displayed. move:%s fen=%s', event.pv[0], game.fen())
+                        logging.info('illegal move can not be displayed. move: %s fen: %s', event.pv[0], game.fen())
                     break
 
                 if case(EventApi.NEW_SCORE):
@@ -974,10 +972,9 @@ def main():
 
                 if case(EventApi.EMAIL_LOG):
                     if args.log_file:
-                        email_logger = Emailer(email=args.email, mailgun_key=args.mailgun_key,
-                                               smtp_server=args.smtp_server, smtp_user=args.smtp_user,
-                                               smtp_pass=args.smtp_pass, smtp_encryption=args.smtp_encryption,
-                                               smtp_from=args.smtp_from)
+                        email_logger = Emailer(email=args.email, mailgun_key=args.mailgun_key)
+                        email_logger.set_smtp(sserver=args.smtp_server, suser=args.smtp_user, spass=args.smtp_pass,
+                                              sencryption=args.smtp_encryption, sfrom=args.smtp_from)
                         body = 'You probably want to forward this file to a picochess developer ;-)'
                         email_logger.send('Picochess LOG', body, '/opt/picochess/logs/{}'.format(args.log_file))
                     break
@@ -991,7 +988,7 @@ def main():
                     break
 
                 if case(EventApi.KEYBOARD_FEN):
-                    DisplayMsg.show(Message.DGT_FEN(fen=event.fen))
+                    DisplayMsg.show(Message.DGT_FEN(fen=event.fen, raw=True))
                     break
 
                 if case(EventApi.EXIT_MENU):

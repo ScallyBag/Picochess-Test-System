@@ -28,11 +28,11 @@ import copy
 from threading import Timer
 
 import configparser
-from dgttranslate import DgtTranslate
-from dgtapi import Dgt
+from dgt.translate import DgtTranslate
+from dgt.api import Dgt
 
 # picochess version
-version = '086'
+version = '087'
 
 evt_queue = queue.Queue()
 dispatch_queue = queue.Queue()

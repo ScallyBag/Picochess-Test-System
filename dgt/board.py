@@ -18,8 +18,8 @@
 import serial as pyserial
 import struct
 
-from dgtutil import DgtAck, DgtClk, DgtCmd, DgtMsg, ClockIcons, ClockSide, enum
-from dgtapi import Message, Dgt
+from dgt.util import DgtAck, DgtClk, DgtCmd, DgtMsg, ClockIcons, ClockSide, enum
+from dgt.api import Message, Dgt
 
 from utilities import RepeatedTimer, switch, DisplayMsg, hours_minutes_seconds
 import logging
@@ -310,7 +310,7 @@ class DgtBoard(object):
 
                 # Attention! This fen is NOT flipped
                 logging.debug("Raw-Fen [%s]", fen)
-                DisplayMsg.show(Message.DGT_FEN(fen=fen))
+                DisplayMsg.show(Message.DGT_FEN(fen=fen, raw=True))
                 break
             if case(DgtMsg.DGT_MSG_FIELD_UPDATE):
                 if message_length != 2:
@@ -663,6 +663,6 @@ class DgtBoard(object):
         return res
 
     def run(self):
-        """NOT called from threading.Thread instead inside the __init__ function from dgthw.py."""
+        """NOT called from threading.Thread instead inside the __init__ function from hw.py."""
         self.incoming_board_thread = Timer(0, self._process_incoming_board_forever)
         self.incoming_board_thread.start()

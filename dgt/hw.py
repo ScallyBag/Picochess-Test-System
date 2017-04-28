@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from dgtiface import DgtIface
+from dgt.iface import DgtIface
 from utilities import hours_minutes_seconds
 import logging
-from dgtutil import ClockIcons, ClockSide, DgtClk, DgtCmd
+from dgt.util import ClockIcons, ClockSide, DgtClk, DgtCmd
 from threading import Lock
-from dgttranslate import DgtTranslate
-from dgtboard import DgtBoard
+from dgt.translate import DgtTranslate
+from dgt.board import DgtBoard
 
 
 class DgtHw(DgtIface):
@@ -120,7 +120,7 @@ class DgtHw(DgtIface):
     def light_squares_revelation_board(self, uci_move: str):
         """light the Rev2 leds."""
         if self.dgtboard.use_revelation_leds:
-            logging.debug("REV2 lights on move {}".format(uci_move))
+            logging.debug('REV2 lights on move {}'.format(uci_move))
             fr_s = (8 - int(uci_move[1])) * 8 + ord(uci_move[0]) - ord('a')
             to_s = (8 - int(uci_move[3])) * 8 + ord(uci_move[2]) - ord('a')
             self.dgtboard.write_command([DgtCmd.DGT_SET_LEDS, 0x04, 0x01, fr_s, to_s, DgtClk.DGT_CMD_CLOCK_END_MESSAGE])

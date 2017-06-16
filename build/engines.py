@@ -17,7 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['api', 'board', 'display', 'hw', 'iface', 'menu', 'pi', 'translate', 'util']
-__author__ = 'Jürgen Précour'
-__email__ = 'LocutusOfPenguin@posteo.de'
-__version__ = '0.87'
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+
+from uci.util import write_engine_ini
+
+write_engine_ini()

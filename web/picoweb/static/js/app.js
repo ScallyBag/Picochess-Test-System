@@ -12,7 +12,9 @@ const NAG_SPECULATIVE_MOVE = 5;
 const NAG_DUBIOUS_MOVE = 6;
 //"""A dubious move. Can also be indicated by ``?!`` in PGN notation."""
 
-var simple_nags = {'1': '!', '2': '?', '3': '!!', '4': '??', '5': '!?', '6': '?!', '7': '&#9633', '8': '&#9632','11' : '=', '13': '&infin;', '14': '&#10866', '15': '&#10865', '16': '&plusmn;', '17': '&#8723', '18': '&#43; &minus;', '19': '&minus; &#43;', '36': '&rarr;','142': '&#8979','146': 'N'};
+var simpleNags = {'1': '!', '2': '?', '3': '!!', '4': '??', '5': '!?', '6': '?!', '7': '&#9633', '8': '&#9632',
+    '11': '=', '13': '&infin;', '14': '&#10866', '15': '&#10865', '16': '&plusmn;', '17': '&#8723',
+    '18': '&#43; &minus;', '19': '&minus; &#43;', '36': '&rarr;','142': '&#8979','146': 'N'};
 
 
 const NAG_FORCED_MOVE = 7;
@@ -48,6 +50,12 @@ var gameHistory, fenHash, currentPosition;
 const BACKEND_SERVER_PREFIX = 'http://drshivaji.com:3334';
 //const BACKEND_SERVER_PREFIX = "http://localhost:7777";
 
+// remote begin
+var remote_server_prefix = "drshivaji.com:9876";
+//var remote_server_prefix = "localhost:5432";
+var remote_ws = null;
+// remote end
+
 fenHash = {};
 
 currentPosition = {};
@@ -64,7 +72,7 @@ var chessGameType = 0; // 0=Standard ; 1=Chess960
 
 
 function removeHighlights() {
-    chessground_1.setShapes([]);
+    chessground1.setShapes([]);
 }
 
 function highlightBoard(ucimove, play) {
@@ -78,7 +86,7 @@ function highlightBoard(ucimove, play) {
         brush = 'blue';
     }
     var shapes = {orig: move[0], dest: move[1], brush: brush};
-    chessground_1.setShapes([shapes]);
+    chessground1.setShapes([shapes]);
 }
 
 function figurinizeMove(move) {
@@ -261,9 +269,9 @@ function createGamePointer() {
 }
 
 function stripFen(fen) {
-    var stripped_fen = fen.replace(/\//g, '');
-    stripped_fen = stripped_fen.replace(/ /g, '');
-    return stripped_fen;
+    var strippedFen = fen.replace(/\//g, '');
+    strippedFen = strippedFen.replace(/ /g, '');
+    return strippedFen;
 }
 
 String.prototype.trim = function() {
@@ -308,11 +316,11 @@ function WebExporter(columns) {
     };
 
     this.start_variation = function() {
-        this.write_token("<span class='gameVariation'> [ ");
+        this.write_token('<span class="gameVariation"> [ ');
     };
 
     this.end_variation = function() {
-        this.write_token(" ] </span>");
+        this.write_token(' ] </span>');
     };
 
     this.put_starting_comment = function(comment) {
@@ -335,8 +343,8 @@ function WebExporter(columns) {
 
     this.put_nag = function(nag) {
         var int_nag = parseInt(nag);
-        if (simple_nags[int_nag]) {
-            this.write_token(" " + simple_nags[int_nag] + " ");
+        if (simpleNags[int_nag]) {
+            this.write_token(" " + simpleNags[int_nag] + " ");
         }
         else {
             this.write_token("$" + String(nag) + " ");
@@ -679,7 +687,7 @@ var onSnapEnd = function(source, target) {
 function updateChessGround() {
     var tmpGame = createGamePointer();
 
-    chessground_1.set({
+    chessground1.set({
         fen: currentPosition.fen,
         turnColor: toColor(tmpGame),
         movable: {
@@ -701,14 +709,14 @@ var cfg3 = {
             }
         };
 
-var chessground_1 = new Chessground(document.getElementById('board'), cfg3 );
+var chessground1 = new Chessground(document.getElementById('board'), cfg3 );
 
-chessground_1.set({
+chessground1.set({
     movable: { events: { after: playOtherSide() } }
 });
 
 $(window).resize(function() {
-    chessground_1.redrawAll();
+    chessground1.redrawAll();
 });
 
 function addNewMove(m, current_position, fen, props) {
@@ -1041,7 +1049,7 @@ function clockButtonPower() {
 
 function sendConsoleCommand() {
     var cmd = $('#inputConsole').val();
-    $('#consoleTextarea').append(cmd + '&#13;');
+    $('#consoleLogArea').append('<li>' + cmd + '</li>');
     $.post('/channel', {action: 'command', command: cmd}, function (data) {
     });
 }
@@ -1110,8 +1118,174 @@ function goBack() {
 }
 
 function boardFlip() {
-    chessground_1.toggleOrientation();
+    chessground1.toggleOrientation();
 }
+
+// remote begin
+function sendRemoteMsg() {
+    if(remote_ws) {
+        var text_msg_obj = {"event": "text", "payload": $('#remoteText').val()};
+        $("#remoteText").val("");
+        $("#remoteText").focus();
+        var jmsg = JSON.stringify(text_msg_obj);
+        remote_ws.send(jmsg);
+    } else {
+        console.log('cant send message cause of closed connection!');
+    }
+}
+
+function setInsideRoom() {
+    $('#leaveRoomBtn').removeAttr('disabled').show();
+    $('#SendTextRemoteBtn').removeAttr('disabled');
+    $('#enterRoomBtn').attr('disabled', 'disabled').hide();
+    $('#RemoteRoom').attr('disabled', 'disabled');
+    $('#RemoteNick').attr('disabled', 'disabled');
+    $('#broadcastBtn').removeAttr('disabled');
+
+    $.post('/channel', {action: 'room', room: 'inside'}, function (data) {
+    });
+}
+
+function setOutsideRoom() {
+    $('#leaveRoomBtn').attr('disabled', 'disabled').hide();
+    $('#SendTextRemoteBtn').attr('disabled', 'disabled');
+    $('#enterRoomBtn').removeAttr('disabled').show();
+    $('#RemoteRoom').removeAttr('disabled');
+    $('#RemoteNick').removeAttr('disabled');
+    $('#broadcastBtn').attr('disabled', 'disabled');
+
+    $.post('/channel', {action: 'room', room: 'outside'}, function (data) {
+    });
+}
+
+function leaveRoom() {
+    setOutsideRoom();
+    if(remote_ws) {
+        remote_ws.close();
+    }
+}
+
+function enterRoom() {
+    $.ajax({
+        dataType: 'jsonp',
+        url: 'http://' + remote_server_prefix,
+        data: {
+            room: $('#RemoteRoom').val(),
+            nick: $('#RemoteNick').val()
+        }
+    }).done(function(data) {
+        console.log(data);
+        if(data.result === 'OK') {
+            setInsideRoom();
+
+            remote_ws = new WebSocket("ws://" + remote_server_prefix + "/ws/" + data.client_id);
+
+            remote_ws.onopen = function (event) {
+                console.log("RemoteChessServerSocket opened");
+            };
+
+            remote_ws.onclose = function () {
+                console.log("RemoteChessServerSocket closed");
+                setOutsideRoom();
+            };
+
+            remote_ws.onerror = function (event) {
+                console.warn("RemoteChessServerSocket error");
+                dgtClockStatusEl.html(event.data);
+            };
+
+            remote_ws.onmessage = receive_message;
+        }
+
+    }).fail(function(jqXHR, textStatus) {
+        console.warn('Failed ajax request');
+        console.log(jqXHR);
+        dgtClockStatusEl.html(textStatus);
+    });
+}
+
+function receive_message(wsevent) {
+    console.log("received message: " + wsevent.data);
+    var msg_obj = $.parseJSON(wsevent.data);
+    switch (msg_obj.event) {
+        case "join":
+            $('#consoleLogArea').append('<li>' + msg_obj.username + msg_obj.payload + '</li>');
+            break;
+        case "leave":
+            $('#consoleLogArea').append('<li>' + msg_obj.username + msg_obj.payload + '</li>');
+            break;
+        case "nick_list":
+            $('#consoleLogArea').append('<li>' + 'current users: ' + msg_obj.payload.toString() + '</li>');
+            break;
+        case "text":
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' +  msg_obj.payload + '</li>');
+            break;
+        // picochess events!
+        case 'Clock':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Clock: ' + msg_obj.msg + '</li>');
+            break;
+        case 'Light':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Light: ' + msg_obj.move + '</li>');
+            break;
+        case 'Clear':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Clear' + '</li>');
+            break;
+        case 'Fen':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Fen: ' + msg_obj.fen + ' move: ' + msg_obj.move + ' play: ' + msg_obj.play + '</li>');
+            break;
+        case 'Game':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'NewGame' + '</li>');
+            break;
+        case 'Message':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Message: ' + msg_obj.msg + '</li>');
+            break;
+        case 'Status':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'ClockStatus: ' + msg_obj.msg + '</li>');
+            break;
+        case 'Header':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Header: ' + msg_obj.headers.toString() + '</li>');
+            break;
+        case 'Title':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Title: ' + msg_obj.ip_info.toString() + '</li>');
+            break;
+        case 'Broadcast':
+            $('#consoleLogArea').append('<li>' + msg_obj.username + ':' + 'Broadcast: ' + msg_obj.msg + 'fen: ' + msg_obj.fen + '</li>');
+            break;
+        default:
+            console.log(msg_obj.event);
+            console.log(msg_obj);
+            console.log(' ');
+    }
+}
+
+/*
+function getCookie(name) {
+    console.log('getCookie');
+    console.log(document.cookie);
+    console.log(' ');
+    var pattern = new RegExp(name + "=.[^;]*");
+    var matched = document.cookie.match(pattern);
+    if (matched) {
+        var cookie = matched[0].split('=');
+        return cookie[1]
+    }
+    return false
+}
+
+function deleteCookie( name, path, domain ) {
+    if ( getCookie( name ) ) {
+        var pico_cookie = name + "=" +
+            ( ( path ) ? ";path=" + path : "") +
+            ( ( domain ) ? ";domain=" + domain : "" ) +
+            ";expires=Thu, 01-Jan-1970 00:00:01 GMT";
+        console.log('deleteCookie');
+        console.log(pico_cookie);
+        console.log(' ');
+        document.cookie = pico_cookie;
+    }
+}
+*/
+// remote end
 
 function formatEngineOutput(line) {
     if (line.search('depth') > 0 && line.search('currmove') < 0) {
@@ -1418,7 +1592,7 @@ function setTitle(data) {
     if (window.ip_info.version) {
         version = window.ip_info.version;
     } else if (window.system_info.version) {
-        version = window.system_info.version
+        version = window.system_info.version;
     }
     document.title = 'Webserver Picochess ' + version + ip;
 }
@@ -1489,6 +1663,12 @@ $('#ClockLeverBtn').on('click', toggleLeverButton);
 $('#consoleBtn').on('click', toggleConsoleButton);
 $('#getFenToConsoleBtn').on('click', getFenToConsole);
 
+// remote begin
+$('#enterRoomBtn').on('click', enterRoom);
+$('#leaveRoomBtn').on('click', leaveRoom);
+$('#SendTextRemoteBtn').on('click', sendRemoteMsg);
+// remote end
+
 $("#inputConsole").keyup(function(event) {
     if(event.keyCode === 13) {
         sendConsoleCommand();
@@ -1504,6 +1684,20 @@ $(function() {
     });
     window.engine_lines = {};
     window.multipv = 1;
+
+// remote begin
+    setOutsideRoom();
+    $("#RemoteRoom").keyup(function(event) { remote_send(); } );
+    $("#RemoteNick").keyup(function(event) { remote_send(); } );
+
+    function remote_send() {
+        if ( $("#RemoteRoom").val() !== "" && $("#RemoteNick").val() !== "") {
+            $("#enterRoomBtn").removeAttr("disabled");
+        } else {
+            $("#enterRoomBtn").attr("disabled", "disabled");
+        }
+    }
+// remote end
 
     $(document).keydown(function(e) {
         if (e.keyCode === 39) { //right arrow

@@ -21,19 +21,16 @@ except ImportError:
     import enum34 as enum
 
 
-class AutoNumber(enum.Enum):
+class MyEnum(enum.Enum):
 
-    """AutoNumber Class."""
+    """Prevent __init__ problem Class."""
 
-    def __new__(cls):  # Autonumber
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
+    def __init__(self, *args):
+        pass
 
 
 @enum.unique
-class Top(enum.Enum):
+class Top(MyEnum):
 
     """Top Class."""
 
@@ -88,11 +85,12 @@ class TopLoop(object):
 
 
 @enum.unique
-class Mode(enum.Enum):
+class Mode(MyEnum):
 
     """Mode Class."""
 
     NORMAL = 'B00_mode_normal_menu'
+    BRAIN = 'B00_mode_brain_menu'
     ANALYSIS = 'B00_mode_analysis_menu'
     KIBITZ = 'B00_mode_kibitz_menu'
     OBSERVE = 'B00_mode_observe_menu'
@@ -111,16 +109,18 @@ class ModeLoop(object):
     def next(item: Mode):
         """Get next item."""
         if item == Mode.NORMAL:
+            return Mode.BRAIN
+        if item == Mode.BRAIN:
             return Mode.ANALYSIS
         elif item == Mode.ANALYSIS:
             return Mode.KIBITZ
         elif item == Mode.KIBITZ:
             return Mode.OBSERVE
         elif item == Mode.OBSERVE:
-            return Mode.REMOTE
-        elif item == Mode.REMOTE:
             return Mode.PONDER
         elif item == Mode.PONDER:
+            return Mode.REMOTE
+        elif item == Mode.REMOTE:
             return Mode.NORMAL
         return 'errModeNext'
 
@@ -128,22 +128,24 @@ class ModeLoop(object):
     def prev(item: Mode):
         """Get previous item."""
         if item == Mode.NORMAL:
-            return Mode.PONDER
-        elif item == Mode.ANALYSIS:
+            return Mode.REMOTE
+        if item == Mode.BRAIN:
             return Mode.NORMAL
+        elif item == Mode.ANALYSIS:
+            return Mode.BRAIN
         elif item == Mode.KIBITZ:
             return Mode.ANALYSIS
         elif item == Mode.OBSERVE:
             return Mode.KIBITZ
-        elif item == Mode.REMOTE:
-            return Mode.OBSERVE
         elif item == Mode.PONDER:
-            return Mode.REMOTE
+            return Mode.OBSERVE
+        elif item == Mode.REMOTE:
+            return Mode.PONDER
         return 'errModePrev'
 
 
 @enum.unique
-class PlayMode(enum.Enum):
+class PlayMode(MyEnum):
 
     """PlayMode Class."""
 
@@ -151,7 +153,7 @@ class PlayMode(enum.Enum):
     USER_BLACK = 'B10_playmode_black_user'
 
 
-class TimeMode(enum.Enum):
+class TimeMode(MyEnum):
 
     """TimeMode Class."""
 
@@ -190,18 +192,16 @@ class TimeModeLoop(object):
         return 'errTiMoPrev'
 
 
-class System(enum.Enum):
+class System(MyEnum):
 
     """System Class."""
 
-    VERSION = 'B00_system_version_menu'
-    IPADR = 'B00_system_ipadr_menu'
+    INFO = 'B00_system_info_menu'
     SOUND = 'B00_system_sound_menu'
     LANGUAGE = 'B00_system_language_menu'
     LOGFILE = 'B00_system_logfile_menu'
     VOICE = 'B00_system_voice_menu'
     DISPLAY = 'B00_system_display_menu'
-    BATTERY = 'B00_system_battery_menu'
 
 
 class SystemLoop(object):
@@ -214,9 +214,7 @@ class SystemLoop(object):
     @staticmethod
     def next(item: System):
         """Get next item."""
-        if item == System.VERSION:
-            return System.IPADR
-        elif item == System.IPADR:
+        if item == System.INFO:
             return System.SOUND
         elif item == System.SOUND:
             return System.LANGUAGE
@@ -227,17 +225,13 @@ class SystemLoop(object):
         elif item == System.VOICE:
             return System.DISPLAY
         elif item == System.DISPLAY:
-            return System.BATTERY
-        elif item == System.BATTERY:
-            return System.VERSION
+            return System.INFO
         return 'errSystNext'
 
     @staticmethod
     def prev(item: System):
         """Get previous item."""
-        if item == System.VERSION:
-            return System.BATTERY
-        if item == System.BATTERY:
+        if item == System.INFO:
             return System.DISPLAY
         if item == System.DISPLAY:
             return System.VOICE
@@ -248,13 +242,50 @@ class SystemLoop(object):
         if item == System.LANGUAGE:
             return System.SOUND
         elif item == System.SOUND:
-            return System.IPADR
-        elif item == System.IPADR:
-            return System.VERSION
+            return System.INFO
         return 'errSystPrev'
 
 
-class Language(enum.Enum):
+class Info(MyEnum):
+
+    """Info Class."""
+
+    VERSION = 'B00_info_version_menu'
+    IPADR = 'B00_info_ipadr_menu'
+    BATTERY = 'B00_info_battery_menu'
+
+
+class InfoLoop(object):
+
+        """InfoLoop Class."""
+
+        def __init__(self):
+            super(InfoLoop, self).__init__()
+
+        @staticmethod
+        def next(item: Info):
+            """Get next item."""
+            if item == Info.VERSION:
+                return Info.IPADR
+            elif item == Info.IPADR:
+                return Info.BATTERY
+            elif item == Info.BATTERY:
+                return Info.VERSION
+            return 'errInfoNext'
+
+        @staticmethod
+        def prev(item: Info):
+            """Get previous item."""
+            if item == Info.VERSION:
+                return Info.BATTERY
+            if item == Info.BATTERY:
+                return Info.IPADR
+            if item == Info.IPADR:
+                return Info.VERSION
+            return 'errInfoPrev'
+
+
+class Language(MyEnum):
 
     """Language Class."""
 
@@ -308,7 +339,7 @@ class LanguageLoop(object):
         return 'errLangPrev'
 
 
-class Beep(enum.Enum):
+class Beep(MyEnum):
 
     """Beep Class."""
 
@@ -346,7 +377,7 @@ class BeepLoop(object):
         return 'errBeepPrev'
 
 
-class Voice(enum.Enum):
+class Voice(MyEnum):
 
     """Voice Class."""
 
@@ -386,7 +417,7 @@ class VoiceLoop(object):
 
 
 @enum.unique
-class Display(enum.Enum):
+class Display(MyEnum):
 
     """Display Class."""
 
@@ -426,7 +457,7 @@ class DisplayLoop(object):
 
 
 @enum.unique
-class GameResult(enum.Enum):
+class GameResult(MyEnum):
 
     """Game end result."""
 
@@ -442,17 +473,8 @@ class GameResult(enum.Enum):
     DRAW = 'B00_gameresult_draw'
 
 
-class EngineStatus(AutoNumber):
-
-    """Status of the engine."""
-
-    THINK = ()
-    PONDER = ()
-    WAIT = ()
-
-
 @enum.unique
-class BeepLevel(enum.Enum):
+class BeepLevel(MyEnum):
 
     """Define the beep level for each beep event."""
 
@@ -465,7 +487,7 @@ class BeepLevel(enum.Enum):
 
 
 @enum.unique
-class ClockSide(enum.Enum):
+class ClockSide(MyEnum):
 
     """Side to display the message."""
 
@@ -475,7 +497,7 @@ class ClockSide(enum.Enum):
 
 
 @enum.unique
-class ClockIcons(enum.Enum):
+class ClockIcons(MyEnum):
 
     """DGT clock icons."""
 
@@ -485,7 +507,7 @@ class ClockIcons(enum.Enum):
 
 
 @enum.unique
-class DgtCmd(enum.Enum):
+class DgtCmd(MyEnum):
 
     """COMMAND CODES FROM PC TO BOARD."""
 
@@ -518,7 +540,7 @@ class DgtCmd(enum.Enum):
     DGT_CLOCK_MESSAGE = 0x2b  # This message contains a command for the clock.
 
 
-class DgtClk(enum.Enum):
+class DgtClk(MyEnum):
 
     """DESCRIPTION OF THE COMMANDS FROM BOARD TO PC."""
 
@@ -539,7 +561,7 @@ class DgtClk(enum.Enum):
     DGT_CMD_CLOCK_END_MESSAGE = 0x00
 
 
-class DgtAck(enum.Enum):
+class DgtAck(MyEnum):
 
     """DESCRIPTION OF THE ACKNOWLEDGMENTS FROM BOARD TO PC."""
 

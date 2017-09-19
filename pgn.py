@@ -162,7 +162,7 @@ class PgnDisplay(DisplayMsg, threading.Thread):
         self.user_elo = '-'
 
     def _save_and_email_pgn(self, message):
-        logging.debug('Saving game to [' + self.file_name + ']')
+        logging.debug('Saving game to [%s]', self.file_name)
         pgn_game = chess.pgn.Game().from_board(message.game)
 
         # Headers
@@ -188,8 +188,8 @@ class PgnDisplay(DisplayMsg, threading.Thread):
         else:
             comp_elo = 2900
             # @todo find a better way to setup engine elo
-            engine_elo = {'stockfish': 3300, 'texel': 3140, 'rodent': 2920,
-                          'zurichess': 2790, 'floyd': 2660, 'cinnamon': 2060}
+            engine_elo = {'stockfish': 3360, 'texel': 3050, 'rodent': 2920,
+                          'zurichess': 2790, 'floyd': 2620, 'cinnamon': 2060}
             for name, elo in engine_elo.items():
                 if self.engine_name.lower().startswith(name):
                     comp_elo = elo
@@ -243,7 +243,7 @@ class PgnDisplay(DisplayMsg, threading.Thread):
                 self.engine_name = self.old_engine
 
         elif isinstance(message, Message.ENGINE_READY):
-            self.engine_name = message.engine_name
+            self.old_engine = self.engine_name = message.engine_name
             if not message.has_levels:
                 self.level_text = None
                 self.level_name = ''
@@ -253,7 +253,6 @@ class PgnDisplay(DisplayMsg, threading.Thread):
                 self._save_and_email_pgn(message)
 
         else:  # Default
-            # print(message)
             pass
 
     def run(self):
@@ -263,8 +262,6 @@ class PgnDisplay(DisplayMsg, threading.Thread):
             # Check if we have something to display
             try:
                 message = self.msg_queue.get()
-                # if repr(message) != MessageApi.DGT_SERIAL_NR:
-                #     logging.debug("received message from msg_queue: %s", message)
                 self._process_message(message)
             except queue.Empty:
                 pass

@@ -26,14 +26,14 @@ import time
 
 from dgt.util import DgtAck, DgtClk, DgtCmd, DgtMsg, ClockIcons, ClockSide, enum
 from dgt.api import Message, Dgt
-from utilities import RepeatedTimer, DisplayMsg, hours_minutes_seconds
+from utilities import RepeatedTimer, DisplayMsg, hms_time
 
 
 class DgtBoard(object):
 
     """Handle the DGT board communication."""
 
-    def __init__(self, device: str, disable_revelation_leds: bool, is_pi: bool, disable_end: bool):
+    def __init__(self, device: str, disable_revelation_leds: bool, is_pi: bool, disable_end: bool, field_factor=0):
         super(DgtBoard, self).__init__()
         self.given_device = device
         self.device = device
@@ -41,6 +41,7 @@ class DgtBoard(object):
         self.disable_revelation_leds = disable_revelation_leds
         self.is_pi = is_pi
         self.disable_end = disable_end  # @todo for test - XL needs a "end_text" maybe!
+        self.field_factor = field_factor % 10
 
         self.serial = None
         self.lock = Lock()  # inside setup_serial_port()
@@ -66,6 +67,31 @@ class DgtBoard(object):
         self.l_time = 3600 * 10  # max value cause 10h cant be reached by clock
 
         self.bconn_text = None
+        # keep track of changed board positions
+        self.field_timer = None
+        self.field_timer_running = False
+        self.channel = None
+
+    def expired_field_timer(self):
+        """Board position hasnt changed for some time."""
+        logging.debug('board position now stable => ask for complete board')
+        self.field_timer_running = False
+        self.write_command([DgtCmd.DGT_SEND_BRD])  # Ask for the board when a piece moved
+
+    def stop_field_timer(self):
+        """Stop the field timer cause another field change been send."""
+        logging.debug('board position was unstable => ignore former field update')
+        self.field_timer.cancel()
+        self.field_timer.join()
+        self.field_timer_running = False
+
+    def start_field_timer(self):
+        """Start the field timer waiting for a stable board position."""
+        wait = (0.5 if self.channel == 'BT' else 0.25) + 0.03 * self.field_factor  # BT boards scanning in half speed
+        logging.debug('board position changed => wait %.2fsecs for a stable result', wait)
+        self.field_timer = Timer(wait, self.expired_field_timer)
+        self.field_timer.start()
+        self.field_timer_running = True
 
     def write_command(self, message: list):
         """Write the message list to the dgt board."""
@@ -77,11 +103,11 @@ class DgtBoard(object):
 
         array = []
         char_to_xl = {
-            '0': 0x3f, '1': 0x06, '2': 0x5b, '3': 0x4f, '4': 0x66, '5': 0x6d, '6': 0x7d, '7': 0x07, '8': 0x7f, '9': 0x6f,
-            'a': 0x5f, 'b': 0x7c, 'c': 0x58, 'd': 0x5e, 'e': 0x7b, 'f': 0x71, 'g': 0x3d, 'h': 0x74, 'i': 0x10, 'j': 0x1e,
-            'k': 0x75, 'l': 0x38, 'm': 0x55, 'n': 0x54, 'o': 0x5c, 'p': 0x73, 'q': 0x67, 'r': 0x50, 's': 0x6d, 't': 0x78,
-            'u': 0x3e, 'v': 0x2a, 'w': 0x7e, 'x': 0x64, 'y': 0x6e, 'z': 0x5b, ' ': 0x00, '-': 0x40, '/': 0x52, '|': 0x36,
-            '\\': 0x64, '?': 0x53, '@': 0x65, '=': 0x48, '_': 0x08
+            '0': 0x3f, '1': 0x06, '2': 0x5b, '3': 0x4f, '4': 0x66, '5': 0x6d, '6': 0x7d, '7': 0x07, '8': 0x7f,
+            '9': 0x6f, 'a': 0x5f, 'b': 0x7c, 'c': 0x58, 'd': 0x5e, 'e': 0x7b, 'f': 0x71, 'g': 0x3d, 'h': 0x74,
+            'i': 0x10, 'j': 0x1e, 'k': 0x75, 'l': 0x38, 'm': 0x55, 'n': 0x54, 'o': 0x5c, 'p': 0x73, 'q': 0x67,
+            'r': 0x50, 's': 0x6d, 't': 0x78, 'u': 0x3e, 'v': 0x2a, 'w': 0x7e, 'x': 0x64, 'y': 0x6e, 'z': 0x5b,
+            ' ': 0x00, '-': 0x40, '/': 0x52, '|': 0x36, '\\': 0x64, '?': 0x53, '@': 0x65, '=': 0x48, '_': 0x08
         }
         for item in message:
             if isinstance(item, int):
@@ -120,9 +146,9 @@ class DgtBoard(object):
         if message[0] == DgtCmd.DGT_CLOCK_MESSAGE:
             self.last_clock_command = message
             if self.clock_lock:
-                logging.warning('(ser) clock already locked. Maybe a "resend"?')
+                logging.warning('(ser) clock is already locked. Maybe a "resend"?')
             else:
-                logging.debug('(ser) clock now locked')
+                logging.debug('(ser) clock is locked now')
             self.clock_lock = time.time()
         else:
             time.sleep(0.1)  # give the board some time to process the command
@@ -139,7 +165,7 @@ class DgtBoard(object):
             self.write_command([DgtCmd.DGT_SEND_BRD])  # Update the board => get first FEN
             if self.device.find('rfc') == -1:
                 text_l, text_m, text_s = 'USB e-Board', 'USBboard', 'ok usb'
-                channel = 'USB'
+                self.channel = 'USB'
             else:
                 btname5 = self.bt_name[-5:]
                 if 'REVII' in self.bt_name:
@@ -151,11 +177,11 @@ class DgtBoard(object):
                     self.use_revelation_leds = False
                 else:
                     text_l, text_m, text_s = 'BT e-Board', 'BT board', 'ok bt'
-                channel = 'BT'
+                self.channel = 'BT'
                 self.ask_battery_status()
             self.bconn_text = Dgt.DISPLAY_TEXT(l=text_l, m=text_m, s=text_s, wait=True, beep=False, maxtime=1.1,
                                                devs={'i2c', 'web'})  # serial clock lateron
-            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=channel))
+            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel))
             self.startup_serial_clock()  # now ask the serial clock to answer
             if self.watchdog_timer.is_running():
                 logging.warning('watchdog timer is already running')
@@ -223,9 +249,6 @@ class DgtBoard(object):
                     else:
                         dev = 'err'
                     DisplayMsg.show(Message.DGT_CLOCK_VERSION(main=main, sub=sub, dev=dev, text=self.bconn_text))
-                if ack1 == DgtAck.DGT_ACK_CLOCK_SETNRUN.value:  # set time values to max => sure! override lateron
-                    self.r_time = 3600 * 10
-                    self.l_time = 3600 * 10
             elif any(message[:7]):
                 r_hours = message[0] & 0x0f
                 r_mins = (message[1] >> 4) * 10 + (message[1] & 0x0f)
@@ -240,19 +263,18 @@ class DgtBoard(object):
                     logging.warning('(ser) clock illegal new time received %s', message)
                 elif r_time > self.r_time or l_time > self.l_time:  # the new time is higher as the old => ignore
                     logging.warning('(ser) clock strange old time received %s l:%s r:%s',
-                                    message, hours_minutes_seconds(self.l_time), hours_minutes_seconds(self.r_time))
+                                    message, hms_time(self.l_time), hms_time(self.r_time))
                 else:
                     status = message[6] & 0x3f
                     if status & 0x20:
                         logging.info('(ser) clock not connected')
                         if not self.is_pi:
+                            errtim = True
                             DisplayMsg.show(Message.DGT_NO_CLOCK_ERROR(text='dont_use'))
                         self.lever_pos = None
                     else:
-                        rtime = [r_hours, r_mins, r_secs]
-                        ltime = [l_hours, l_mins, l_secs]
-                        logging.info('(ser) clock new time received l:%s r:%s', ltime, rtime)
-                        DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=ltime, time_right=rtime, dev='ser'))
+                        logging.info('(ser) clock new time received l:%s r:%s', hms_time(l_time), hms_time(r_time))
+                        DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=l_time, time_right=r_time, dev='ser'))
 
                         if not self.enable_ser_clock:
                             if self.watchdog_timer.is_running():  # a running watchdog means: board already found
@@ -314,7 +336,9 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_FIELD_UPDATE:
             if message_length != 2:
                 logging.warning('illegal length in data')
-            self.write_command([DgtCmd.DGT_SEND_BRD])  # Ask for the board when a piece moved
+            if self.field_timer_running:
+                self.stop_field_timer()
+            self.start_field_timer()
 
         elif message_id == DgtMsg.DGT_MSG_SERIALNR:
             if message_length != 5:
@@ -608,7 +632,8 @@ class DgtBoard(object):
             self.wait_counter = (self.wait_counter + 1) % len(waitchars)
         return False
 
-    def _wait_for_clock(self, func):
+    # dgtHw functions start
+    def _wait_for_clock(self, func: str):
         has_to_wait = False
         counter = 0
         while self.clock_lock:
@@ -674,6 +699,21 @@ class DgtBoard(object):
                                   DgtClk.DGT_CMD_CLOCK_END,
                                   DgtClk.DGT_CMD_CLOCK_END_MESSAGE])
         return res
+
+    def light_squares_on_revelation(self, uci_move: str):
+        """Light the Rev2 leds."""
+        if self.use_revelation_leds:
+            logging.debug('(rev) leds turned on - move: %s', uci_move)
+            fr_s = (8 - int(uci_move[1])) * 8 + ord(uci_move[0]) - ord('a')
+            to_s = (8 - int(uci_move[3])) * 8 + ord(uci_move[2]) - ord('a')
+            self.write_command([DgtCmd.DGT_SET_LEDS, 0x04, 0x01, fr_s, to_s, DgtClk.DGT_CMD_CLOCK_END_MESSAGE])
+
+    def clear_light_on_revelation(self):
+        """Clear the Rev2 leds."""
+        if self.use_revelation_leds:
+            logging.debug('(rev) leds turned off')
+            self.write_command([DgtCmd.DGT_SET_LEDS, 0x04, 0x00, 0x40, 0x40, DgtClk.DGT_CMD_CLOCK_END_MESSAGE])
+    # dgtHw functions end
 
     def run(self):
         """NOT called from threading.Thread instead inside the __init__ function from hw.py."""

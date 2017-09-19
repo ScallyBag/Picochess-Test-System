@@ -21,7 +21,7 @@ from threading import Lock, Timer
 from ctypes import cdll, c_byte, create_string_buffer, pointer
 from platform import machine
 
-from utilities import DisplayMsg, hours_minutes_seconds
+from utilities import DisplayMsg, hms_time
 from dgt.api import Message
 from dgt.util import ClockIcons, ClockSide
 from dgt.translate import DgtTranslate
@@ -33,11 +33,15 @@ class DgtPi(DgtIface):
 
     """Handle the DgtPi communication."""
 
-    def __init__(self, dgttranslate: DgtTranslate, dgtboard: DgtBoard):
-        super(DgtPi, self).__init__(dgttranslate, dgtboard)
+    def __init__(self, dgtboard: DgtBoard):
+        super(DgtPi, self).__init__(dgtboard)
 
         self.lib_lock = Lock()
         self.lib = cdll.LoadLibrary('etc/dgtpicom.x86.so' if machine() == 'x86_64' else 'etc/dgtpicom.so')
+
+        # keep the last time to find out errorous DGT_MSG_BWTIME messages (error: current time > last time)
+        self.r_time = 3600 * 10  # max value cause 10h cant be reached by clock
+        self.l_time = 3600 * 10  # max value cause 10h cant be reached by clock
 
         self._startup_i2c_clock()
         incoming_clock_thread = Timer(0, self._process_incoming_clock_forever)
@@ -100,15 +104,20 @@ class DgtPi(DgtIface):
                 self.lib.dgtpicom_get_time(clktime)
 
             times = list(clktime.raw)
-            counter = (counter + 1) % 10
+            counter = (counter + 1) % 5
             if counter == 0:
-                DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=times[:3], time_right=times[3:], dev='i2c'))
+                l_hms = times[:3]
+                r_hms = times[3:]
+                self.l_time = l_hms[0] * 3600 + l_hms[1] * 60 + l_hms[2]
+                self.r_time = r_hms[0] * 3600 + r_hms[1] * 60 + r_hms[2]
+                logging.info('(i2c) clock new time received l:%s r:%s', l_hms, r_hms)
+                DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=self.l_time, time_right=self.r_time, dev='i2c'))
             time.sleep(0.1)
 
     def _display_on_dgt_pi(self, text: str, beep=False, left_icons=ClockIcons.NONE, right_icons=ClockIcons.NONE):
         if len(text) > 11:
             logging.warning('(i2c) clock message too long [%s]', text)
-        logging.debug(text)
+        logging.debug('[%s]', text)
         text = bytes(text, 'utf-8')
         with self.lib_lock:
             res = self.lib.dgtpicom_set_text(text, 0x03 if beep else 0x00, left_icons.value, right_icons.value)
@@ -130,7 +139,7 @@ class DgtPi(DgtIface):
         text = message.l
         if text is None:
             text = message.m
-        if self.getName() not in message.devs:
+        if self.get_name() not in message.devs:
             logging.debug('ignored %s - devs: %s', text, message.devs)
             return
         left_icons = message.ld if hasattr(message, 'ld') else ClockIcons.NONE
@@ -141,7 +150,7 @@ class DgtPi(DgtIface):
         """Display a move on the dgtpi."""
         bit_board, text = self.get_san(message)
         text = '{:3d}{:s}'.format(bit_board.fullmove_number, text)
-        if self.getName() not in message.devs:
+        if self.get_name() not in message.devs:
             logging.debug('ignored %s - devs: %s', text, message.devs)
             return True
         left_icons = message.ld if hasattr(message, 'ld') else ClockIcons.DOT
@@ -150,7 +159,7 @@ class DgtPi(DgtIface):
 
     def display_time_on_clock(self, message):
         """Display the time on the dgtpi."""
-        if self.getName() not in message.devs:
+        if self.get_name() not in message.devs:
             logging.debug('ignored endText - devs: %s', message.devs)
             return True
         if self.clock_running or message.force:
@@ -180,15 +189,15 @@ class DgtPi(DgtIface):
 
     def stop_clock(self, devs: set):
         """Stop the dgtpi."""
-        if self.getName() not in devs:
+        if self.get_name() not in devs:
             logging.debug('ignored stopClock - devs: %s', devs)
             return True
+        logging.debug('(%s) clock sending stop time to clock l:%s r:%s', ','.join(devs),
+                      hms_time(self.l_time), hms_time(self.r_time))
         return self._resume_clock(ClockSide.NONE)
 
     def _resume_clock(self, side: ClockSide):
-        l_hms = self.time_left
-        r_hms = self.time_right
-        if l_hms is None or r_hms is None:
+        if self.l_time >= 3600 * 10 or self.r_time >= 3600 * 10:
             logging.warning('time values not set - abort function')
             return False
 
@@ -214,13 +223,14 @@ class DgtPi(DgtIface):
 
     def start_clock(self, time_left: int, time_right: int, side: ClockSide, devs: set):
         """Start the dgtpi."""
-        if self.getName() not in devs:
+        if self.get_name() not in devs:
             logging.debug('ignored startClock - devs: %s', devs)
             return True
-        self.time_left = hours_minutes_seconds(time_left)
-        self.time_right = hours_minutes_seconds(time_right)
-        l_hms = self.time_left
-        r_hms = self.time_right
+        l_hms = hms_time(time_left)
+        r_hms = hms_time(time_right)
+        logging.debug('(%s) clock received last time from clock l:%s r:%s', ','.join(devs),
+                      hms_time(self.l_time), hms_time(self.r_time))
+        logging.debug('(%s) clock sending start time to clock l:%s r:%s', ','.join(devs), l_hms, r_hms)
 
         l_run = r_run = 0
         if side == ClockSide.LEFT:
@@ -244,6 +254,6 @@ class DgtPi(DgtIface):
             self.clock_running = (side != ClockSide.NONE)
             return True
 
-    def getName(self):
+    def get_name(self):
         """Get name."""
         return 'i2c'

@@ -31,9 +31,7 @@ class BaseClass(object):
 
 
 def ClassFactory(name, argnames, BaseClass=BaseClass):
-
     """Class factory for generating."""
-
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             # here, the argnames variable is the one passed to the ClassFactory call
@@ -81,9 +79,11 @@ class EventApi():
     STOP_SEARCH = 'EVT_STOP_SEARCH'  # Engine stops the search
     # Timecontrol events
     OUT_OF_TIME = 'EVT_OUT_OF_TIME'  # Clock flag fallen
+    CLOCK_TIME = 'EVT_CLOCK_TIME'  # Clock sends its time
     # Special events
     EXIT_MENU = 'EVT_EXIT_MENU'  # User exists the menu
     UPDATE_PICO = 'EVT_UPDATE'  # User wants to upgrade/downgrade picochess
+    REMOTE_ROOM = 'EVT_REMOTE_ROOM'  # User enters/leaves the remote room
 
 
 class MessageApi():
@@ -139,6 +139,7 @@ class MessageApi():
     WRONG_FEN = 'MSG_WRONG_FEN'  # User sends a wrong placement of pieces (timed)
     BATTERY = 'MSG_BATTERY'  # percent of BT battery
     UPDATE_PICO = 'MSG_UPDATE'  # User wants to update picochess
+    REMOTE_ROOM = 'MSG_REMOTE_ROOM'  # User enters/leaves a remote room
 
 
 class DgtApi():
@@ -154,7 +155,7 @@ class DgtApi():
     CLOCK_STOP = 'DGT_CLOCK_STOP'
     CLOCK_START = 'DGT_CLOCK_START'
     CLOCK_VERSION = 'DGT_CLOCK_VERSION'
-    CLOCK_TIME = 'DGT_CLOCK_TIME'
+    # CLOCK_TIME = 'DGT_CLOCK_TIME'
     SERIALNR = 'DGT_SERIALNR'
 
 
@@ -162,15 +163,16 @@ class Dgt():
 
     """Used to define tasks for the communication towards the dgt hardware."""
 
-    DISPLAY_MOVE = ClassFactory(DgtApi.DISPLAY_MOVE, ['move', 'fen', 'uci960', 'side', 'beep', 'maxtime', 'devs', 'wait', 'ld', 'rd'])
-    DISPLAY_TEXT = ClassFactory(DgtApi.DISPLAY_TEXT, ['l', 'm', 's', 'beep', 'maxtime', 'devs', 'wait', 'ld', 'rd'])
+    DISPLAY_MOVE = ClassFactory(DgtApi.DISPLAY_MOVE, ['move', 'fen', 'uci960', 'side', 'lang', 'capital',
+                                                      'beep', 'maxtime', 'devs', 'wait', 'ld', 'rd'])
+    DISPLAY_TEXT = ClassFactory(DgtApi.DISPLAY_TEXT, ['l', 'm', 's',
+                                                      'beep', 'maxtime', 'devs', 'wait', 'ld', 'rd'])
     DISPLAY_TIME = ClassFactory(DgtApi.DISPLAY_TIME, ['wait', 'force', 'devs'])
     LIGHT_CLEAR = ClassFactory(DgtApi.LIGHT_CLEAR, ['devs'])
     LIGHT_SQUARES = ClassFactory(DgtApi.LIGHT_SQUARES, ['uci_move', 'devs'])
     CLOCK_STOP = ClassFactory(DgtApi.CLOCK_STOP, ['devs'])
     CLOCK_START = ClassFactory(DgtApi.CLOCK_START, ['time_left', 'time_right', 'side', 'devs', 'wait'])
     CLOCK_VERSION = ClassFactory(DgtApi.CLOCK_VERSION, ['main', 'sub', 'devs'])
-    CLOCK_TIME = ClassFactory(DgtApi.CLOCK_TIME, ['time_left', 'time_right', 'devs'])
 
 
 class Message():
@@ -182,8 +184,10 @@ class Message():
     BOOK_MOVE = ClassFactory(MessageApi.BOOK_MOVE, [])
     NEW_PV = ClassFactory(MessageApi.NEW_PV, ['pv', 'mode', 'game'])
     REVIEW_MOVE_DONE = ClassFactory(MessageApi.REVIEW_MOVE_DONE, ['move', 'fen', 'turn', 'game'])
-    ENGINE_READY = ClassFactory(MessageApi.ENGINE_READY, ['eng', 'eng_text', 'engine_name', 'has_levels', 'has_960', 'show_ok'])
-    ENGINE_STARTUP = ClassFactory(MessageApi.ENGINE_STARTUP, ['shell', 'file', 'level_index', 'has_levels', 'has_960'])
+    ENGINE_READY = ClassFactory(MessageApi.ENGINE_READY, ['eng', 'eng_text', 'engine_name', 'has_levels', 'has_960',
+                                                          'has_ponder', 'show_ok'])
+    ENGINE_STARTUP = ClassFactory(MessageApi.ENGINE_STARTUP, ['shell', 'file', 'level_index', 'has_levels', 'has_960',
+                                                              'has_ponder'])
     ENGINE_FAIL = ClassFactory(MessageApi.ENGINE_FAIL, [])
     LEVEL = ClassFactory(MessageApi.LEVEL, ['level_text', 'level_name', 'do_speak'])
     TIME_CONTROL = ClassFactory(MessageApi.TIME_CONTROL, ['time_text', 'show_ok', 'tc_init'])
@@ -203,8 +207,8 @@ class Message():
     PLAY_MODE = ClassFactory(MessageApi.PLAY_MODE, ['play_mode', 'play_mode_text'])
     START_NEW_GAME = ClassFactory(MessageApi.START_NEW_GAME, ['game', 'newgame'])
     COMPUTER_MOVE_DONE = ClassFactory(MessageApi.COMPUTER_MOVE_DONE, [])
-    SEARCH_STARTED = ClassFactory(MessageApi.SEARCH_STARTED, ['engine_status'])
-    SEARCH_STOPPED = ClassFactory(MessageApi.SEARCH_STOPPED, ['engine_status'])
+    SEARCH_STARTED = ClassFactory(MessageApi.SEARCH_STARTED, [])
+    SEARCH_STOPPED = ClassFactory(MessageApi.SEARCH_STOPPED, [])
     TAKE_BACK = ClassFactory(MessageApi.TAKE_BACK, ['game'])
     CLOCK_START = ClassFactory(MessageApi.CLOCK_START, ['turn', 'tc_init', 'devs'])
     CLOCK_STOP = ClassFactory(MessageApi.CLOCK_STOP, ['devs'])
@@ -226,6 +230,7 @@ class Message():
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
     BATTERY = ClassFactory(MessageApi.BATTERY, ['percent'])
     UPDATE_PICO = ClassFactory(MessageApi.UPDATE_PICO, [])
+    REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['inside'])
 
 
 class Event():
@@ -238,13 +243,13 @@ class Event():
     NEW_GAME = ClassFactory(EventApi.NEW_GAME, ['pos960'])
     DRAWRESIGN = ClassFactory(EventApi.DRAWRESIGN, ['result'])
     KEYBOARD_MOVE = ClassFactory(EventApi.KEYBOARD_MOVE, ['move'])
-    REMOTE_MOVE = ClassFactory(EventApi.REMOTE_MOVE, ['uci_move', 'fen'])
+    REMOTE_MOVE = ClassFactory(EventApi.REMOTE_MOVE, ['move', 'fen'])
     SET_OPENING_BOOK = ClassFactory(EventApi.SET_OPENING_BOOK, ['book', 'book_text', 'show_ok'])
     NEW_ENGINE = ClassFactory(EventApi.NEW_ENGINE, ['eng', 'eng_text', 'options', 'show_ok'])
     SET_INTERACTION_MODE = ClassFactory(EventApi.SET_INTERACTION_MODE, ['mode', 'mode_text', 'show_ok'])
     SETUP_POSITION = ClassFactory(EventApi.SETUP_POSITION, ['fen', 'uci960'])
     PAUSE_RESUME = ClassFactory(EventApi.PAUSE_RESUME, [])
-    SWITCH_SIDES = ClassFactory(EventApi.SWITCH_SIDES, ['engine_finished'])
+    SWITCH_SIDES = ClassFactory(EventApi.SWITCH_SIDES, [])
     SET_TIME_CONTROL = ClassFactory(EventApi.SET_TIME_CONTROL, ['tc_init', 'time_text', 'show_ok'])
     SHUTDOWN = ClassFactory(EventApi.SHUTDOWN, ['dev'])
     REBOOT = ClassFactory(EventApi.REBOOT, ['dev'])
@@ -259,10 +264,12 @@ class Event():
     NEW_PV = ClassFactory(EventApi.NEW_PV, ['pv'])
     NEW_SCORE = ClassFactory(EventApi.NEW_SCORE, ['score', 'mate'])
     NEW_DEPTH = ClassFactory(EventApi.NEW_DEPTH, ['depth'])
-    START_SEARCH = ClassFactory(EventApi.START_SEARCH, ['engine_status'])
-    STOP_SEARCH = ClassFactory(EventApi.STOP_SEARCH, ['engine_status'])
+    START_SEARCH = ClassFactory(EventApi.START_SEARCH, [])
+    STOP_SEARCH = ClassFactory(EventApi.STOP_SEARCH, [])
     # Timecontrol events
     OUT_OF_TIME = ClassFactory(EventApi.OUT_OF_TIME, ['color'])
+    CLOCK_TIME = ClassFactory(EventApi.CLOCK_TIME, ['time_white', 'time_black', 'dev'])
     # special events
     EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, [])
     UPDATE_PICO = ClassFactory(EventApi.UPDATE_PICO, ['tag'])
+    REMOTE_ROOM = ClassFactory(EventApi.REMOTE_ROOM, ['inside'])

@@ -24,8 +24,7 @@ import chess
 from timecontrol import TimeControl
 from utilities import Observable, DispatchDgt, get_tags, version, write_picochess_ini
 from dgt.util import TimeMode, TimeModeLoop, Top, TopLoop, Mode, ModeLoop, Language, LanguageLoop, BeepLevel, BeepLoop
-from dgt.util import System, SystemLoop, Display, DisplayLoop, ClockIcons
-from dgt.util import Voice, VoiceLoop
+from dgt.util import System, SystemLoop, Display, DisplayLoop, ClockIcons, Voice, VoiceLoop, Info, InfoLoop
 from dgt.api import Dgt, Event
 from dgt.translate import DgtTranslate
 
@@ -61,36 +60,34 @@ class MenuState(object):
     ENG_NAME_LEVEL = 611000
 
     SYS = 700000
-    SYS_VERS = 710000
-    SYS_IP = 720000
-    SYS_IP_INT = 721000
-    SYS_IP_EXT = 722000
-    SYS_SOUND = 730000
-    SYS_SOUND_TYPE = 731000  # never, always, some
-    SYS_LANG = 740000
-    SYS_LANG_NAME = 741000  # de, en, ...
-    SYS_LOG = 750000
+    SYS_INFO = 710000
+    SYS_INFO_VERS = 711000
+    SYS_INFO_IP = 712000
+    SYS_INFO_BATTERY = 713000
+    SYS_SOUND = 720000
+    SYS_SOUND_TYPE = 721000  # never, always, some
+    SYS_LANG = 730000
+    SYS_LANG_NAME = 731000  # de, en, ...
+    SYS_LOG = 740000
+    SYS_VOICE = 750000
+    SYS_VOICE_USER = 751000  # user
+    SYS_VOICE_COMP = 752000  # computer
+    # @todo TYPE should be split into USER and COMPUTER, but since they are the same, make it easy
+    SYS_VOICE_TYPE_MUTE = 753100  # on, off (3=1+2 see above) valid for user & computer
+    SYS_VOICE_TYPE_MUTE_LANG = 753110  # de, en, ...
+    SYS_VOICE_TYPE_MUTE_LANG_SPEAK = 753111  # al, christina, ...
+    SYS_VOICE_SPEED = 754000  # vspeed
+    SYS_VOICE_SPEED_FACTOR = 754100  # 0-7
+    SYS_DISP = 760000
+    SYS_DISP_CNFRM = 761000
+    SYS_DISP_CNFRM_YESNO = 761100  # yes,no
+    SYS_DISP_PONDER = 762000
+    SYS_DISP_PONDER_INTERVAL = 762100  # 1-8
+    SYS_DISP_CAPITAL = 763000
+    SYS_DISP_CAPTIAL_YESNO = 763100  # yes, no
 
-    SYS_VOICE = 760000
-    SYS_VOICE_TYPE = 761000  # user, computer, speed
-    SYS_VOICE_USER = 761001  # user (subset from above)
-    SYS_VOICE_COMP = 761002  # computer (subset from above)
-
-    SYS_VOICE_TYPE_MUTE = 761100  # on, off
-    SYS_VOICE_TYPE_MUTE_LANG = 761110  # de, en, ...
-    SYS_VOICE_TYPE_MUTE_LANG_SPEAK = 761111  # al, christina, ...
-    SYS_VOICE_SPEED = 761200
-    SYS_VOICE_SPEED_FACTOR = 761210  # 0-7
-
-    SYS_DISP = 770000
-    SYS_DISP_CNFRM = 771000
-    SYS_DISP_CNFRM_YESNO = 771100  # yes,no
-    SYS_DISP_PONDER = 772000
-    SYS_DISP_PONDER_INTERVAL = 772100  # 1-8
-    SYS_DISP_CAPITAL = 773000
-    SYS_DISP_CAPTIAL_YESNO = 773100  # yes, no
-
-    SYS_BATTERY = 780000
+    # @todo implement transitions from one state to the other like "up, down, left, right"
+    # @todo take for example the numbers given to build source code instead of one by one
 
 
 class DgtMenu(object):
@@ -122,6 +119,7 @@ class DgtMenu(object):
 
         self.menu_engine_level = None
         self.engine_has_960 = False
+        self.engine_has_ponder = False
         self.engine_restart = False
         self.menu_engine_name = 0
         self.installed_engines = []
@@ -129,7 +127,7 @@ class DgtMenu(object):
         self.menu_book = 0
         self.all_books = []
 
-        self.menu_system = System.VERSION
+        self.menu_system = System.INFO
         self.menu_system_sound_beep = self.dgttranslate.beep
 
         langs = {'en': Language.EN, 'de': Language.DE, 'nl': Language.NL,
@@ -149,6 +147,7 @@ class DgtMenu(object):
         self.menu_system_voice_factor = speed_voice
 
         self.menu_system_display = Display.PONDER
+        self.menu_system_info = Info.VERSION
 
         self.menu_time_mode = TimeMode.BLITZ
 
@@ -157,7 +156,7 @@ class DgtMenu(object):
         self.menu_time_fisch = 0
         self.tc_fixed_list = [' 1', ' 3', ' 5', '10', '15', '30', '60', '90']
         self.tc_blitz_list = [' 1', ' 3', ' 5', '10', '15', '30', '60', '90']
-        self.tc_fisch_list = [' 1  1', ' 3  2', ' 4  2', ' 5  3', '10  5', '15 10', '30 15', '60 30']
+        self.tc_fisch_list = [' 1  1', ' 3  2', ' 5  3', '10  5', '15 10', '30 15', '60 20', '90 30']
         self.tc_fixed_map = OrderedDict([
             ('rnbqkbnr/pppppppp/Q7/8/8/8/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FIXED, fixed=1)),
             ('rnbqkbnr/pppppppp/1Q6/8/8/8/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FIXED, fixed=3)),
@@ -179,12 +178,12 @@ class DgtMenu(object):
         self.tc_fisch_map = OrderedDict([
             ('rnbqkbnr/pppppppp/8/8/8/Q7/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=1, fischer=1)),
             ('rnbqkbnr/pppppppp/8/8/8/1Q6/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=3, fischer=2)),
-            ('rnbqkbnr/pppppppp/8/8/8/2Q5/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=4, fischer=2)),
-            ('rnbqkbnr/pppppppp/8/8/8/3Q4/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=5, fischer=3)),
-            ('rnbqkbnr/pppppppp/8/8/8/4Q3/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=10, fischer=5)),
-            ('rnbqkbnr/pppppppp/8/8/8/5Q2/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=15, fischer=10)),
-            ('rnbqkbnr/pppppppp/8/8/8/6Q1/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=30, fischer=15)),
-            ('rnbqkbnr/pppppppp/8/8/8/7Q/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=60, fischer=30))])
+            ('rnbqkbnr/pppppppp/8/8/8/2Q5/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=5, fischer=3)),
+            ('rnbqkbnr/pppppppp/8/8/8/3Q4/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=10, fischer=5)),
+            ('rnbqkbnr/pppppppp/8/8/8/4Q3/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=15, fischer=10)),
+            ('rnbqkbnr/pppppppp/8/8/8/5Q2/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=30, fischer=15)),
+            ('rnbqkbnr/pppppppp/8/8/8/6Q1/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=60, fischer=20)),
+            ('rnbqkbnr/pppppppp/8/8/8/7Q/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=90, fischer=30))])
         # setup the result vars for api (dgtdisplay)
         self.save_choices()
         # During "picochess" is displayed, some special actions allowed
@@ -195,6 +194,7 @@ class DgtMenu(object):
         self.updt_version = 0  # index to current version
 
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
+        self.inside_room = False
 
     def inside_updt_menu(self):
         """Inside update menu."""
@@ -262,6 +262,14 @@ class DgtMenu(object):
         """Set the flag."""
         self.engine_has_960 = flag
 
+    def get_engine_has_ponder(self):
+        """Get the flag."""
+        return self.engine_has_ponder
+
+    def set_engine_has_ponder(self, flag: bool):
+        """Set the flag."""
+        self.engine_has_ponder = flag
+
     def get_dgt_fen(self):
         """Get the flag."""
         return self.dgt_fen
@@ -306,6 +314,10 @@ class DgtMenu(object):
         """Set the flag."""
         self.res_time_mode = self.menu_time_mode = mode
 
+    def get_time_mode(self):
+        """Get the flag."""
+        return self.res_time_mode
+
     def set_time_fixed(self, index: int):
         """Set the flag."""
         self.res_time_fixed = self.menu_time_fixed = index
@@ -330,10 +342,9 @@ class DgtMenu(object):
         """Get the flag."""
         return self.res_time_fisch
 
-    def set_position_reverse_to_flipboard(self):
+    def set_position_reverse_flipboard(self, flip_board):
         """Set the flag."""
-        self.flip_board = not self.flip_board  # Flip the board
-        self.res_position_reverse = self.flip_board
+        self.res_position_reverse = self.flip_board = flip_board
 
     def get_ponderinterval(self):
         """Get the flag."""
@@ -485,16 +496,28 @@ class DgtMenu(object):
         text = self.dgttranslate.text(Top.SYSTEM.value)
         return text
 
-    def enter_sys_vers_menu(self):
+    def enter_sys_info_menu(self):
         """Set the menu state."""
-        self.state = MenuState.SYS_VERS
+        self.state = MenuState.SYS_INFO
         text = self.dgttranslate.text(self.menu_system.value)
         return text
 
-    def enter_sys_ip_menu(self):
+    def enter_sys_info_vers_menu(self):
         """Set the menu state."""
-        self.state = MenuState.SYS_IP
-        text = self.dgttranslate.text(self.menu_system.value)
+        self.state = MenuState.SYS_INFO_VERS
+        text = self.dgttranslate.text(self.menu_system_info.value)
+        return text
+
+    def enter_sys_info_ip_menu(self):
+        """Set the menu state."""
+        self.state = MenuState.SYS_INFO_IP
+        text = self.dgttranslate.text(self.menu_system_info.value)
+        return text
+
+    def enter_sys_info_battery_menu(self):
+        """Set the menu state."""
+        self.state = MenuState.SYS_INFO_BATTERY
+        text = self.dgttranslate.text(self.menu_system_info.value)
         return text
 
     def enter_sys_sound_menu(self):
@@ -637,12 +660,6 @@ class DgtMenu(object):
         text = self.dgttranslate.text('B00_capital_' + msg)
         return text
 
-    def enter_sys_battery_menu(self):
-        """Set the menu state."""
-        self.state = MenuState.SYS_BATTERY
-        text = self.dgttranslate.text(self.menu_system.value)
-        return text
-
     def _fire_event(self, event: Event):
         Observable.fire(event)
         return self.save_choices()
@@ -655,6 +672,14 @@ class DgtMenu(object):
         time_text = self.dgttranslate.text('B10_oktime')
         event = Event.SET_TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=time_text, show_ok=True)
         return self._fire_event(event)
+
+    def exit_menu(self):
+        """Exit the menu."""
+        if self.inside_main_menu():
+            self.enter_top_menu()
+            if not self.get_confirm():
+                return True
+        return False
 
     def main_up(self):
         """Change the menu state after UP action."""
@@ -723,11 +748,17 @@ class DgtMenu(object):
         elif self.state == MenuState.SYS:
             text = self.enter_top_menu()
 
-        elif self.state == MenuState.SYS_VERS:
+        elif self.state == MenuState.SYS_INFO:
             text = self.enter_sys_menu()
 
-        elif self.state == MenuState.SYS_IP:
-            text = self.enter_sys_menu()
+        elif self.state == MenuState.SYS_INFO_VERS:
+            text = self.enter_sys_info_menu()
+
+        elif self.state == MenuState.SYS_INFO_IP:
+            text = self.enter_sys_info_menu()
+
+        elif self.state == MenuState.SYS_INFO_BATTERY:
+            text = self.enter_sys_info_menu()
 
         elif self.state == MenuState.SYS_SOUND:
             text = self.enter_sys_menu()
@@ -789,9 +820,6 @@ class DgtMenu(object):
         elif self.state == MenuState.SYS_DISP_CAPTIAL_YESNO:
             text = self.enter_sys_disp_capital_menu()
 
-        elif self.state == MenuState.SYS_BATTERY:
-            text = self.enter_sys_menu()
-
         else:  # Default
             pass
         self.current_text = text
@@ -820,10 +848,15 @@ class DgtMenu(object):
             text = self.enter_mode_type_menu()
 
         elif self.state == MenuState.MODE_TYPE:
-            # do action!
-            text = self.dgttranslate.text('B10_okmode')
-            event = Event.SET_INTERACTION_MODE(mode=self.menu_mode, mode_text=text, show_ok=True)
-            text = self._fire_event(event)
+            # maybe do action!
+            if self.menu_mode == Mode.REMOTE and not self.inside_room:
+                text = self.dgttranslate.text('Y00_errorroom')
+            elif self.menu_mode == Mode.NORMAL or self.get_engine_has_ponder():
+                mode_text = self.dgttranslate.text('B10_okmode')
+                event = Event.SET_INTERACTION_MODE(mode=self.menu_mode, mode_text=mode_text, show_ok=True)
+                text = self._fire_event(event)
+            else:  # only allow a pondering mode if engine supports that
+                text = self.dgttranslate.text('Y00_erroreng')
 
         elif self.state == MenuState.POS:
             text = self.enter_pos_color_menu()
@@ -839,14 +872,14 @@ class DgtMenu(object):
 
         elif self.state == MenuState.POS_READ:
             # do action!
-            to_move = 'w' if self.menu_position_whitetomove else 'b'
             fen = self.dgt_fen
             if self.flip_board != self.menu_position_reverse:
-                logging.debug('flipping the board')
+                logging.debug('flipping the board - %s infront now', 'B' if self.menu_position_reverse else 'W')
                 fen = fen[::-1]
-            fen += " {0} KQkq - 0 1".format(to_move)
+            fen += ' {0} KQkq - 0 1'.format('w' if self.menu_position_whitetomove else 'b')
             # ask python-chess to correct the castling string
             bit_board = chess.Board(fen, self.menu_position_uci960)
+            bit_board.set_fen(bit_board.fen())
             if bit_board.is_valid():
                 self.flip_board = self.menu_position_reverse
                 event = Event.SETUP_POSITION(fen=bit_board.fen(), uci960=self.menu_position_uci960)
@@ -854,6 +887,7 @@ class DgtMenu(object):
                 # self._reset_moves_and_score() done in "START_NEW_GAME"
                 text = self.save_choices()
             else:
+                logging.debug('illegal fen %s', fen)
                 DispatchDgt.fire(self.dgttranslate.text('Y05_illegalpos'))
                 text = self.dgttranslate.text('B00_scanboard')
                 text.wait = True
@@ -928,10 +962,8 @@ class DgtMenu(object):
             self.engine_restart = True
 
         elif self.state == MenuState.SYS:
-            if self.menu_system == System.VERSION:
-                text = self.enter_sys_vers_menu()
-            if self.menu_system == System.IPADR:
-                text = self.enter_sys_ip_menu()
+            if self.menu_system == System.INFO:
+                text = self.enter_sys_info_menu()
             if self.menu_system == System.SOUND:
                 text = self.enter_sys_sound_menu()
             if self.menu_system == System.LANGUAGE:
@@ -942,17 +974,23 @@ class DgtMenu(object):
                 text = self.enter_sys_voice_menu()
             if self.menu_system == System.DISPLAY:
                 text = self.enter_sys_disp_menu()
-            if self.menu_system == System.BATTERY:
-                text = self.enter_sys_battery_menu()
 
-        elif self.state == MenuState.SYS_VERS:
+        elif self.state == MenuState.SYS_INFO:
+            if self.menu_system_info == Info.VERSION:
+                text = self.enter_sys_info_vers_menu()
+            if self.menu_system_info == Info.IPADR:
+                text = self.enter_sys_info_ip_menu()
+            if self.menu_system_info == Info.BATTERY:
+                text = self.enter_sys_info_battery_menu()
+
+        elif self.state == MenuState.SYS_INFO_VERS:
             # do action!
             text = self.dgttranslate.text('B10_picochess')
             text.rd = ClockIcons.DOT
             text.wait = False
             text = self._fire_dispatchdgt(text)
 
-        elif self.state == MenuState.SYS_IP:
+        elif self.state == MenuState.SYS_INFO_IP:
             # do action!
             if self.int_ip:
                 msg = ' '.join(self.int_ip.split('.')[:2])
@@ -968,6 +1006,10 @@ class DgtMenu(object):
             else:
                 text = self.dgttranslate.text('B10_noipadr')
             text = self._fire_dispatchdgt(text)
+
+        elif self.state == MenuState.SYS_INFO_BATTERY:
+            # do action!
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_bat_percent', self.battery))
 
         elif self.state == MenuState.SYS_SOUND:
             text = self.enter_sys_sound_type_menu()
@@ -1099,10 +1141,6 @@ class DgtMenu(object):
             config.write()
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okcapital'))
 
-        elif self.state == MenuState.SYS_BATTERY:
-            # do action!
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_bat_percent', self.battery))
-
         else:  # Default
             pass
         self.current_text = text
@@ -1209,18 +1247,28 @@ class DgtMenu(object):
             self.menu_top = TopLoop.prev(self.menu_top)
             text = self.dgttranslate.text(self.menu_top.value)
 
-        elif self.state == MenuState.SYS_VERS:
-            self.state = MenuState.SYS_BATTERY
+        elif self.state == MenuState.SYS_INFO:
+            self.state = MenuState.SYS_DISP
             self.menu_system = SystemLoop.prev(self.menu_system)
             text = self.dgttranslate.text(self.menu_system.value)
 
-        elif self.state == MenuState.SYS_IP:
-            self.state = MenuState.SYS_VERS
-            self.menu_system = SystemLoop.prev(self.menu_system)
-            text = self.dgttranslate.text(self.menu_system.value)
+        elif self.state == MenuState.SYS_INFO_VERS:
+            self.state = MenuState.SYS_INFO_BATTERY
+            self.menu_system_info = InfoLoop.prev(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_IP:
+            self.state = MenuState.SYS_INFO_VERS
+            self.menu_system_info = InfoLoop.prev(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_BATTERY:
+            self.state = MenuState.SYS_INFO_IP
+            self.menu_system_info = InfoLoop.prev(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
 
         elif self.state == MenuState.SYS_SOUND:
-            self.state = MenuState.SYS_IP
+            self.state = MenuState.SYS_INFO
             self.menu_system = SystemLoop.prev(self.menu_system)
             text = self.dgttranslate.text(self.menu_system.value)
 
@@ -1317,11 +1365,6 @@ class DgtMenu(object):
             self.menu_system_display_capital = not self.menu_system_display_capital
             msg = 'on' if self.menu_system_display_capital else 'off'
             text = self.dgttranslate.text('B00_capital_' + msg)
-
-        elif self.state == MenuState.SYS_BATTERY:
-            self.state = MenuState.SYS_DISP
-            self.menu_system = SystemLoop.prev(self.menu_system)
-            text = self.dgttranslate.text(self.menu_system.value)
 
         else:  # Default
             pass
@@ -1429,15 +1472,25 @@ class DgtMenu(object):
             self.menu_top = TopLoop.next(self.menu_top)
             text = self.dgttranslate.text(self.menu_top.value)
 
-        elif self.state == MenuState.SYS_VERS:
-            self.state = MenuState.SYS_IP
-            self.menu_system = SystemLoop.next(self.menu_system)
-            text = self.dgttranslate.text(self.menu_system.value)
-
-        elif self.state == MenuState.SYS_IP:
+        elif self.state == MenuState.SYS_INFO:
             self.state = MenuState.SYS_SOUND
             self.menu_system = SystemLoop.next(self.menu_system)
             text = self.dgttranslate.text(self.menu_system.value)
+
+        elif self.state == MenuState.SYS_INFO_VERS:
+            self.state = MenuState.SYS_INFO_IP
+            self.menu_system_info = InfoLoop.next(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_IP:
+            self.state = MenuState.SYS_INFO_BATTERY
+            self.menu_system_info = InfoLoop.next(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_BATTERY:
+            self.state = MenuState.SYS_INFO_VERS
+            self.menu_system_info = InfoLoop.next(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
 
         elif self.state == MenuState.SYS_SOUND:
             self.state = MenuState.SYS_LANG
@@ -1503,7 +1556,7 @@ class DgtMenu(object):
             text = self.dgttranslate.text('B00_voice_speed', str(self.menu_system_voice_factor))
 
         elif self.state == MenuState.SYS_DISP:
-            self.state = MenuState.SYS_BATTERY
+            self.state = MenuState.SYS_INFO
             self.menu_system = SystemLoop.next(self.menu_system)
             text = self.dgttranslate.text(self.menu_system.value)
 
@@ -1537,11 +1590,6 @@ class DgtMenu(object):
             self.menu_system_display_capital = not self.menu_system_display_capital
             msg = 'on' if self.menu_system_display_capital else 'off'
             text = self.dgttranslate.text('B00_capital_' + msg)
-
-        elif self.state == MenuState.SYS_BATTERY:
-            self.state = MenuState.SYS_VERS
-            self.menu_system = SystemLoop.next(self.menu_system)
-            text = self.dgttranslate.text(self.menu_system.value)
 
         else:  # Default
             pass
@@ -1581,6 +1629,7 @@ class DgtMenu(object):
         return text
 
     def updt_middle(self, dev):
+        """Change the menu state after MIDDLE action."""
         self.updt_devs.add(dev)
         text = self.dgttranslate.text('B00_updt_version', self.updt_tags[self.updt_version][1], devs=self.updt_devs)
         text.rd = ClockIcons.DOT
@@ -1589,18 +1638,21 @@ class DgtMenu(object):
         return text
 
     def updt_right(self):
+        """Change the menu state after RIGHT action."""
         self.updt_version = (self.updt_version + 1) % len(self.updt_tags)
         text = self.dgttranslate.text('B00_updt_version', self.updt_tags[self.updt_version][1], devs=self.updt_devs)
         text.rd = ClockIcons.DOT
         return text
 
     def updt_left(self):
+        """Change the menu state after LEFT action."""
         self.updt_version = (self.updt_version - 1) % len(self.updt_tags)
         text = self.dgttranslate.text('B00_updt_version', self.updt_tags[self.updt_version][1], devs=self.updt_devs)
         text.rd = ClockIcons.DOT
         return text
 
     def updt_down(self, dev):
+        """Change the menu state after DOWN action."""
         logging.debug('leave update menu dev: %s', dev)
         self.updt_top = False
         self.updt_devs.discard(dev)
@@ -1608,6 +1660,7 @@ class DgtMenu(object):
         return self.updt_tags[self.updt_version][0]
 
     def updt_up(self, dev):
+        """Change the menu state after UP action."""
         logging.debug('leave update menu dev: %s', dev)
         self.updt_top = False
         self.updt_devs.discard(dev)

@@ -160,9 +160,9 @@ Manual installation
 
   Initialize the config files:
 
-  ``sudo python3 ./build_engines.py``
-  ``sudo python3 ./build_books.py``
-  ``sudo python3 ./build_voices.py``
+  ``sudo python3 ./build/engines.py``
+  ``sudo python3 ./build/books.py``
+  ``sudo python3 ./build/voices.py``
 
 6. **Copy the dgtpi services into the correct place (ONLY needed if you have a DGTPi chess computer)**
 
@@ -202,6 +202,15 @@ Manual installation
   You can also start PicoChess from the command line in standard mode or in console mode (use "console" flag for this).
 
   PicoChess has a lot of options. Type ``sudo python3 /opt/picochess/picochess.py -h`` for a list.
+
+Make picochess sound better
+---------------------------
+If your output from the RPi audio jack socket is quite low and buzzes a lot add the following line to /boot/config.txt
+``audio_pwm_mode=2``
+Afterwards type ``sudo reboot``.
+
+To make the volume instantly louder (it will also be kept after the reboot) type ``amixer sset PCM,0 90%``
+Obviously the percentage can be set to any number, but 100% is too loud.
 
 Bluetooth Connection
 --------------------

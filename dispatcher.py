@@ -54,6 +54,14 @@ class Dispatcher(DispatchDgt, Thread):
         self.tasks[device] = []
         self.display_hash[device] = None
 
+    def get_prio_device(self):
+        """Return the most prio registered device."""
+        if 'i2c' in self.devices:
+            return 'i2c'
+        if 'ser' in self.devices:
+            return 'ser'
+        return 'web'
+
     def _stopped_maxtimer(self, dev: str):
         self.maxtimer_running[dev] = False
         self.dgtmenu.disable_picochess_displayed(dev)
@@ -62,9 +70,11 @@ class Dispatcher(DispatchDgt, Thread):
             logging.debug('delete not registered (%s) tasks', dev)
             self.tasks[dev] = []
             return
-        DisplayDgt.show(Dgt.DISPLAY_TIME(force=False, wait=True, devs={dev}))
         if self.tasks[dev]:
             logging.debug('processing delayed (%s) tasks: %s', dev, self.tasks[dev])
+        else:
+            logging.debug('(%s) max timer finished - returning to time display', dev)
+            DisplayDgt.show(Dgt.DISPLAY_TIME(force=False, wait=True, devs={dev}))
         while self.tasks[dev]:
             logging.debug('(%s) tasks has %i members', dev, len(self.tasks[dev]))
             try:
@@ -74,11 +84,16 @@ class Dispatcher(DispatchDgt, Thread):
             with self.process_lock[dev]:
                 self._process_message(message, dev)
             if self.maxtimer_running[dev]:  # run over the task list until a maxtime command was processed
+                remaining = len(self.tasks[dev])
+                if remaining:
+                    logging.debug('(%s) tasks stopped on %i remaining members', dev, remaining)
+                else:
+                    logging.debug('(%s) tasks completed', dev)
                 break
 
     def _process_message(self, message, dev: str):
         do_handle = True
-        if repr(message) in (DgtApi.CLOCK_START, DgtApi.CLOCK_STOP, DgtApi.CLOCK_TIME):
+        if repr(message) in (DgtApi.CLOCK_START, DgtApi.CLOCK_STOP):
             self.display_hash[dev] = None  # Cant know the clock display if command changing the running status
         else:
             if repr(message) in (DgtApi.DISPLAY_MOVE, DgtApi.DISPLAY_TEXT):
@@ -102,18 +117,18 @@ class Dispatcher(DispatchDgt, Thread):
                     if message.maxtime == 2.1:  # 2.1=picochess message
                         self.dgtmenu.enable_picochess_displayed(dev)
                     if self.dgtmenu.inside_updt_menu():
-                        if message.maxtime == 0.1:  # 0.1=eboard error
-                            logging.debug('(%s) inside menu => board errors not displayed', dev)
+                        if message.maxtime == 0.1:  # 0.1=eBoard error
+                            logging.debug('(%s) inside update menu => board errors not displayed', dev)
                             return
                         if message.maxtime == 1.1:  # 1.1=eBoard connect
-                            logging.debug('(%s) inside menu => board connect not displayed', dev)
+                            logging.debug('(%s) inside update menu => board connect not displayed', dev)
                             return
                 self.maxtimer[dev] = Timer(message.maxtime * self.time_factor, self._stopped_maxtimer, [dev])
                 self.maxtimer[dev].start()
                 logging.debug('(%s) showing %s for %.1f secs', dev, message, message.maxtime * self.time_factor)
                 self.maxtimer_running[dev] = True
             if repr(message) == DgtApi.CLOCK_START and self.dgtmenu.inside_updt_menu():
-                logging.debug('(%s) inside menu => clock not started', dev)
+                logging.debug('(%s) inside update menu => clock not started', dev)
                 return
             message.devs = {dev}  # on new system, we only have ONE device each message - force this!
             DisplayDgt.show(message)

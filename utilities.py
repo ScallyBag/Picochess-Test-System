@@ -28,7 +28,6 @@ import configparser
 
 from threading import Timer
 from subprocess import Popen, PIPE
-from re import compile, sub
 
 from dgt.translate import DgtTranslate
 from dgt.api import Dgt
@@ -36,15 +35,13 @@ from dgt.api import Dgt
 from configobj import ConfigObj, ConfigObjError, DuplicateError
 
 # picochess version
-version = '09b'
+version = '09h'
 
 evt_queue = queue.Queue()
 dispatch_queue = queue.Queue()
-serial_queue = queue.Queue()
 
 msgdisplay_devices = []
 dgtdisplay_devices = []
-dgtdispatch_devices = []
 
 
 class Observable(object):
@@ -165,8 +162,8 @@ def get_opening_books():
     return library
 
 
-def hours_minutes_seconds(seconds: int):
-    """Return the match method once, then stop."""
+def hms_time(seconds: int):
+    """Transfer a seconds integer to hours,mins,secs."""
     if seconds < 0:
         logging.warning('negative time %i', seconds)
         return 0, 0, 0
@@ -196,8 +193,8 @@ def git_name():
 def get_tags():
     """Get the last 3 tags from git."""
     git = git_name()
-    tags = [(tags, compile(r'[^\d]+').sub('', tags)) for tags in do_popen([git, 'tag'], log=False).split('\n')[-4:-1]]
-    return tags  # returns something like [('v0.86', 086'), ('v0.87', '087'), ('v0.88', '088')]
+    tags = [(tags, tags[1] + tags[-2:]) for tags in do_popen([git, 'tag'], log=False).split('\n')[-4:-1]]
+    return tags  # returns something like [('v0.9a', 09a'), ('v0.9b', '09b'), ('v0.9c', '09c')]
 
 
 def checkout_tag(tag):
@@ -269,7 +266,7 @@ def get_location():
         country_code = j['country_code'] + ' ' if 'country_code' in j else ''
         ext_ip = j['ip'] if 'ip' in j else None
         city = j['city'] + ', ' if 'city' in j else ''
-        return city + country_name + country_code, ext_ip, int_ip
+        return (city + country_name + country_code).strip(), ext_ip, int_ip
     except:
         return '?', None, None
 

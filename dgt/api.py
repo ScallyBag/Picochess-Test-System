@@ -203,7 +203,7 @@ class Message():
     DGT_JACK_CONNECTED_ERROR = ClassFactory(MessageApi.DGT_JACK_CONNECTED_ERROR, [])
     DGT_NO_CLOCK_ERROR = ClassFactory(MessageApi.DGT_NO_CLOCK_ERROR, ['text'])
     DGT_NO_EBOARD_ERROR = ClassFactory(MessageApi.DGT_NO_EBOARD_ERROR, ['text'])
-    DGT_EBOARD_VERSION = ClassFactory(MessageApi.DGT_EBOARD_VERSION, ['text', 'channel'])
+    DGT_EBOARD_VERSION = ClassFactory(MessageApi.DGT_EBOARD_VERSION, ['text', 'channel', 'prefix'])
 
     INTERACTION_MODE = ClassFactory(MessageApi.INTERACTION_MODE, ['mode', 'mode_text', 'show_ok'])
     PLAY_MODE = ClassFactory(MessageApi.PLAY_MODE, ['play_mode', 'play_mode_text'])

@@ -167,28 +167,28 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_VERSION:
             if message_length != 2:
                 logging.warning('illegal length in data')
-            board_version = str(message[0]) + '.' + str(message[1])
-            logging.debug('(ser) board version %0.2f', float(board_version))
+            board_version = str(message[0]) + str(message[1])
+            logging.debug('(ser) board version %s.%s', message[0], message[1])
             self.write_command([DgtCmd.DGT_SEND_BRD])  # Update the board => get first FEN
             if self.device.find('rfc') == -1:
-                text_l, text_m, text_s = 'USB e-Board', 'USBboard', 'ok usb'
+                text_l, text_m, text_s = 'USB e-Board', 'USBboard', 'usb' + board_version.rjust(3)
                 self.channel = 'USB'
             else:
                 btname5 = self.bt_name[-5:]
                 if 'REVII' in self.bt_name:
-                    text_l, text_m, text_s = 'RevII ' + btname5, 'Rev' + btname5, 'b' + btname5
+                    text_l, text_m, text_s = 'RevII ' + btname5, 'Rev' + btname5, 'r' + btname5
                     if not self.disable_revelation_leds:
                         self.use_revelation_leds = True
                 elif 'DGT_BT' in self.bt_name:
                     text_l, text_m, text_s = 'DGTBT ' + btname5, 'BT ' + btname5, 'b' + btname5
                     self.use_revelation_leds = False
                 else:
-                    text_l, text_m, text_s = 'BT e-Board', 'BT board', 'ok bt'
+                    text_l, text_m, text_s = 'BT e-Board', 'BT board', 'bt ' + board_version.rjust(3)
                 self.channel = 'BT'
                 self.ask_battery_status()
             self.bconn_text = Dgt.DISPLAY_TEXT(l=text_l, m=text_m, s=text_s, wait=True, beep=False, maxtime=1.1,
                                                devs={'i2c', 'web'})  # serial clock lateron
-            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel))
+            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel, prefix=text_s))
             self.startup_serial_clock()  # now ask the serial clock to answer
             if self.watchdog_timer.is_running():
                 logging.warning('watchdog timer is already running')

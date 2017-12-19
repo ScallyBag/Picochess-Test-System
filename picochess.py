@@ -24,6 +24,7 @@ import copy
 import gc
 import logging
 from logging.handlers import RotatingFileHandler
+from random import randrange
 import time
 import queue
 import configargparse
@@ -537,7 +538,7 @@ def main():
         engine.mode(ponder=ponder_mode, analyse=analyse_mode)
 
     def _dgt_serial_nr():
-        DisplayMsg.show(Message.DGT_SERIAL_NR(number='dont_use'))
+        DisplayMsg.show(Message.DGT_SERIAL_NR(number=randrange(90000, 99999)))
 
     # Enable garbage collection - needed for engine swapping as objects orphaned
     gc.enable()

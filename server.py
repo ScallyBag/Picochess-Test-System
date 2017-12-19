@@ -28,6 +28,10 @@ import tornado.wsgi
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
+import pika
+import pika.exceptions
+import json
+
 from utilities import Observable, DisplayMsg, hms_time, RepeatedTimer
 from web.picoweb import picoweb as pw
 
@@ -357,6 +361,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
         super(WebDisplay, self).__init__()
         self.shared = shared
         self.starttime = datetime.datetime.now().strftime('%H:%M:%S')
+        self.prefix = 'notuse'  # unique ID from the dgtBoard
 
     def _create_game_info(self):
         if 'game_info' not in self.shared:
@@ -422,6 +427,19 @@ class WebDisplay(DisplayMsg, threading.Thread):
         pgn_game.headers['Time'] = self.starttime
 
     def task(self, message):
+        def pika_send(message):
+            # send to own exchange @rabbitmq server
+            exchange = self.prefix + self.shared['game_info']['serial']  # similar to: "r01000500001", "usb 1814125"
+            try:
+                # connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
+                connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+                channel = connection.channel()
+                channel.exchange_declare(exchange=exchange, exchange_type='fanout')
+                channel.basic_publish(exchange=exchange, routing_key='', body=json.dumps(message))
+                connection.close()
+            except pika.exceptions.ConnectionClosed:
+                pass
+
         def _oldstyle_fen(game: chess.Board):
             builder = []
             builder.append(game.board_fen())
@@ -466,6 +484,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Game', 'move': '0000', 'play': 'newgame'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
             _send_headers()  # don't need _build_headers()
 
         elif isinstance(message, Message.IP_INFO):
@@ -561,6 +581,10 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'event': 'Status', 'msg': 'Ok clock ' + attached}
             EventHandler.write_to_clients(result)
 
+        elif isinstance(message, Message.DGT_SERIAL_NR):
+            self._create_game_info()
+            self.shared['game_info']['serial'] = message.number
+
         elif isinstance(message, Message.COMPUTER_MOVE):
             game_copy = message.game.copy()
             game_copy.push(message.move)
@@ -573,6 +597,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
         elif isinstance(message, Message.COMPUTER_MOVE_DONE):
             result = self.shared['last_dgt_move_msg']
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.USER_MOVE_DONE):
             pgn_str = _transfer(message.game)
@@ -581,6 +607,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'user'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.REVIEW_MOVE_DONE):
             pgn_str = _transfer(message.game)
@@ -589,6 +617,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'review'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.ALTERNATIVE_MOVE):
             pgn_str = _transfer(message.game)
@@ -597,6 +627,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.SWITCH_SIDES):
             pgn_str = _transfer(message.game)
@@ -605,6 +637,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.TAKE_BACK):
             pgn_str = _transfer(message.game)
@@ -613,9 +647,14 @@ class WebDisplay(DisplayMsg, threading.Thread):
             result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                pika_send(result)
 
         elif isinstance(message, Message.GAME_ENDS):
             pass
+
+        elif isinstance(message, Message.DGT_EBOARD_VERSION):
+            self.prefix = message.prefix
 
         else:  # Default
             pass

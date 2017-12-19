@@ -893,7 +893,7 @@ class DgtMenu(object):
 
         elif self.state == MenuState.MODE_TYPE:
             # maybe do action!
-            if self.menu_mode == Mode.REMOTE and not self.inside_room:
+            if self.menu_mode == Mode.REMOTE and not self.inside_room and False:
                 text = self.dgttranslate.text('Y10_errorroom')
             elif self.menu_mode == Mode.BRAIN and not self.get_engine_has_ponder():
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))

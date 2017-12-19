@@ -430,7 +430,6 @@ class WebDisplay(DisplayMsg, threading.Thread):
         def pika_send(message):
             # send to own exchange @rabbitmq server
             exchange = self.prefix + self.shared['game_info']['serial']  # similar to: "r01000500001", "usb 1814125"
-            print(exchange)
             try:
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
                 # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -592,7 +591,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(game_copy)
             fen = _oldstyle_fen(game_copy)
             mov = message.move.uci()
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'computer'}
+            result = {'event': 'Fen', 'pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'computer'}
             self.shared['last_dgt_move_msg'] = result  # not send => keep it for COMPUTER_MOVE_DONE
 
         elif isinstance(message, Message.COMPUTER_MOVE_DONE):
@@ -605,7 +604,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(message.game)
             fen = _oldstyle_fen(message.game)
             mov = message.move.uci()
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'user'}
+            result = {'event': 'Fen', 'pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'user'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
             if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
@@ -615,7 +614,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(message.game)
             fen = _oldstyle_fen(message.game)
             mov = message.move.uci()
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'review'}
+            result = {'event': 'Fen','pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'review'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
             if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
@@ -625,7 +624,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(message.game)
             fen = _oldstyle_fen(message.game)
             mov = peek_uci(message.game)
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
+            result = {'event': 'Fen', 'pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
             if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
@@ -635,7 +634,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(message.game)
             fen = _oldstyle_fen(message.game)
             mov = message.move.uci()
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
+            result = {'event': 'Fen', 'pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
             if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
@@ -645,7 +644,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             pgn_str = _transfer(message.game)
             fen = _oldstyle_fen(message.game)
             mov = peek_uci(message.game)
-            result = {'pgn': pgn_str, 'fen': fen, 'event': 'Fen', 'move': mov, 'play': 'reload'}
+            result = {'event': 'Fen', 'pgn': pgn_str, 'fen': fen, 'move': mov, 'play': 'reload'}
             self.shared['last_dgt_move_msg'] = result
             EventHandler.write_to_clients(result)
             if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
@@ -656,6 +655,11 @@ class WebDisplay(DisplayMsg, threading.Thread):
 
         elif isinstance(message, Message.DGT_EBOARD_VERSION):
             self.prefix = message.prefix
+
+        elif isinstance(message, Message.CLOCK_TIME):
+            if self.shared['game_info']['interaction_mode'] == Mode.REMOTE:
+                result = {'event': 'Clock', 'white': message.time_white, 'black': message.time_black}
+                pika_send(result)
 
         else:  # Default
             pass

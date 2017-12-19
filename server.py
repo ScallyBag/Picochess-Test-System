@@ -430,9 +430,10 @@ class WebDisplay(DisplayMsg, threading.Thread):
         def pika_send(message):
             # send to own exchange @rabbitmq server
             exchange = self.prefix + self.shared['game_info']['serial']  # similar to: "r01000500001", "usb 1814125"
+            print(exchange)
             try:
-                # connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
-                connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+                connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
+                # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
                 channel = connection.channel()
                 channel.exchange_declare(exchange=exchange, exchange_type='fanout')
                 channel.basic_publish(exchange=exchange, routing_key='', body=json.dumps(message))

@@ -5,7 +5,7 @@ import pika
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
 channel = connection.channel()
 
-exchange = 'r1000500001'  # Al's RevII
+exchange = '60005'  # Al's RevII
 channel.exchange_declare(exchange=exchange, exchange_type='fanout')
 
 result = channel.queue_declare(exclusive=True)

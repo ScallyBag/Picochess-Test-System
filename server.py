@@ -431,7 +431,7 @@ class WebDisplay(DisplayMsg, threading.Thread):
             # send to own exchange @rabbitmq server
             try:
                 if self.prefix[0] == 'r':  # REVII
-                    exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of serial area (10k...20k)
+                    exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
                 else:
                     exchange = self.shared['game_info']['serial']
                     if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:  # move USB boards out of serial area

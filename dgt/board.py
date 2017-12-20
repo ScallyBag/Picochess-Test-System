@@ -662,8 +662,7 @@ class DgtBoard(object):
                     return _success(self.given_device)
             else:
                 for file in listdir('/dev'):
-                    if file.startswith('ttyACM') or file.startswith('ttyUSB') or file.startswith('ttyAMA')\
-                            or file == 'rfcomm0':
+                    if file.startswith('ttyACM') or file.startswith('ttyUSB') or file == 'rfcomm0':
                         dev = path.join('/dev', file)
                         if self._open_serial(dev):
                             return _success(dev)

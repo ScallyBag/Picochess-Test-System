@@ -429,8 +429,15 @@ class WebDisplay(DisplayMsg, threading.Thread):
     def task(self, message):
         def pika_send(message):
             # send to own exchange @rabbitmq server
-            exchange = self.prefix + self.shared['game_info']['serial']  # similar to: "r01000500001", "usb 1814125"
             try:
+                if self.prefix[0] == 'r':  # REVII
+                    exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of serial area (10k...20k)
+                else:
+                    exchange = self.shared['game_info']['serial']
+                    if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:  # move USB boards out of serial area
+                        exchange = str(int(exchange) + 70000)
+                print(exchange)
+
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
                 # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
                 channel = connection.channel()
@@ -438,6 +445,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
                 channel.basic_publish(exchange=exchange, routing_key='', body=json.dumps(message))
                 connection.close()
             except pika.exceptions.ConnectionClosed:
+                pass
+            except ValueError:
                 pass
 
         def _oldstyle_fen(game: chess.Board):

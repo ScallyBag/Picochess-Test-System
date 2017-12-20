@@ -167,11 +167,13 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_VERSION:
             if message_length != 2:
                 logging.warning('illegal length in data')
-            board_version = str(message[0]) + str(message[1])
-            logging.debug('(ser) board version %s.%s', message[0], message[1])
+            board_version = str(message[0]) + '.' + str(message[1])
+            logging.debug('(ser) board version %0.2f', float(board_version))
             self.write_command([DgtCmd.DGT_SEND_BRD])  # Update the board => get first FEN
             if self.device.find('rfc') == -1:
-                text_l, text_m, text_s = 'USB e-Board', 'USBboard', 'usb' + board_version.rjust(3)
+                text_l, text_m, text_s = 'USB e-Board', 'USBboard', 'usb' + board_version.replace('.', '').rjust(3)
+                prefix = 'u' if self.device.startswith('/dev/ttyUSB') else 's'
+                prefix += board_version.rjust(5)
                 self.channel = 'USB'
             else:
                 btname5 = self.bt_name[-5:]
@@ -183,12 +185,13 @@ class DgtBoard(object):
                     text_l, text_m, text_s = 'DGTBT ' + btname5, 'BT ' + btname5, 'b' + btname5
                     self.use_revelation_leds = False
                 else:
-                    text_l, text_m, text_s = 'BT e-Board', 'BT board', 'bt ' + board_version.rjust(3)
+                    text_l, text_m, text_s = 'BT e-Board', 'BT board', 't' + board_version.replace('.', '').rjust(5)
+                prefix = text_s
                 self.channel = 'BT'
                 self.ask_battery_status()
             self.bconn_text = Dgt.DISPLAY_TEXT(l=text_l, m=text_m, s=text_s, wait=True, beep=False, maxtime=1.1,
                                                devs={'i2c', 'web'})  # serial clock lateron
-            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel, prefix=text_s))
+            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel, prefix=prefix))
             self.startup_serial_clock()  # now ask the serial clock to answer
             if self.watchdog_timer.is_running():
                 logging.warning('watchdog timer is already running')
@@ -659,7 +662,8 @@ class DgtBoard(object):
                     return _success(self.given_device)
             else:
                 for file in listdir('/dev'):
-                    if file.startswith('ttyACM') or file.startswith('ttyUSB') or file == 'rfcomm0':
+                    if file.startswith('ttyACM') or file.startswith('ttyUSB') or file.startswith('ttyAMA')\
+                            or file == 'rfcomm0':
                         dev = path.join('/dev', file)
                         if self._open_serial(dev):
                             return _success(dev)

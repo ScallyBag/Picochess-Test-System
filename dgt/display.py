@@ -29,6 +29,10 @@ from dgt.util import ClockSide, ClockIcons, BeepLevel, Mode, GameResult, TimeMod
 from dgt.api import Dgt, Event, Message
 from timecontrol import TimeControl
 
+import pika
+import pika.exceptions
+import json
+
 
 class DgtDisplay(DisplayMsg, threading.Thread):
 
@@ -432,6 +436,19 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             else:
                 Observable.fire(Event.FEN(fen=fen))
 
+    def pika_send(self, message):
+        # send to own exchange @rabbitmq server
+        exchange = self.dgtmenu.exchange
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
+            # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+            channel = connection.channel()
+            channel.exchange_declare(exchange=exchange, exchange_type='fanout')
+            channel.basic_publish(exchange=exchange, routing_key='', body=json.dumps(message))
+            connection.close()
+        except pika.exceptions.ConnectionClosed:
+            pass
+
     def _process_engine_ready(self, message):
         for index in range(0, len(self.dgtmenu.installed_engines)):
             if self.dgtmenu.installed_engines[index]['file'] == message.eng['file']:
@@ -470,6 +487,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             DispatchDgt.fire(self.dgttranslate.text('C10_ucigame' if self.uci960 else 'C10_newgame', str(pos960)))
         if self.dgtmenu.get_mode() in (Mode.NORMAL, Mode.BRAIN, Mode.OBSERVE, Mode.REMOTE):
             self._set_clock()
+        if self.dgtmenu.get_mode() == Mode.REMOTE:
+            result = {'pgn': '', 'fen': '', 'event': 'Game', 'move': '0000', 'play': 'newgame'}
+            self.pika_send(result)
 
     def _process_computer_move(self, message):
         self.force_leds_off(log=True)  # can happen in case of a book move
@@ -523,6 +543,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         if self.dgtmenu.get_time_mode() == TimeMode.FIXED:  # go back to a stopped time display and reset times
             self.time_control.reset()
             self._set_clock()
+        if self.dgtmenu.get_mode() == Mode.REMOTE:
+            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'computer'}
+            self.pika_send(result)
 
     def _process_user_move_done(self, message):
         self.force_leds_off(log=True)  # can happen in case of a sliding move
@@ -534,6 +557,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self.play_turn = None
         self._exit_menu()
         self._display_confirm('K05_okuser')
+        if self.dgtmenu.get_mode() == Mode.REMOTE:
+            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'user'}
+            self.pika_send(result)
 
     def _process_review_move_done(self, message):
         self.force_leds_off(log=True)  # can happen in case of a sliding move
@@ -542,6 +568,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self.last_turn = message.turn
         self._exit_menu()
         self._display_confirm('K05_okmove')
+        if self.dgtmenu.get_mode() == Mode.REMOTE:
+            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'review'}
+            self.pika_send(result)
 
     def _process_time_control(self, message):
         wait = not self.dgtmenu.get_confirm() or not message.show_ok
@@ -629,7 +658,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
     def _process_dgt_serial_nr(self, message):
         try:
             if self.prefix[0] == 'r':  # REVII
-                exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
+                exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (0k...50k)
             else:
                 exchange = message.number
                 if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:
@@ -711,6 +740,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.force_leds_off()
             self.play_mode = message.play_mode
             DispatchDgt.fire(self.dgttranslate.text('B05_altmove'))
+            if self.dgtmenu.get() == Mode.REMOTE:
+                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                self.pika_send(result)
 
         elif isinstance(message, Message.LEVEL):
             if not self.dgtmenu.get_engine_restart():
@@ -728,6 +760,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self._reset_moves_and_score()
             DispatchDgt.fire(self.dgttranslate.text('C10_takeback'))
             DispatchDgt.fire(Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'}))
+            if self.dgtmenu.get() == Mode.REMOTE:
+                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                self.pika_send(result)
 
         elif isinstance(message, Message.GAME_ENDS):
             if not self.dgtmenu.get_engine_restart():  # filter out the shutdown/reboot process
@@ -803,6 +838,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 time_white, time_black = time_black, time_white
             Observable.fire(Event.CLOCK_TIME(time_white=time_white, time_black=time_black, connect=message.connect,
                                              dev=message.dev))
+            if self.dgtmenu.get() == Mode.REMOTE:
+                result = {'event': 'Clock', 'white': message.time_white, 'black': message.time_black}
+                self.pika_send(result)
 
         elif isinstance(message, Message.CLOCK_TIME):
             self.low_time = message.low_time
@@ -843,6 +881,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.hint_turn = None
             self.force_leds_off()
             logging.debug('user ignored move %s', message.move)
+            if self.dgtmenu.get() == Mode.REMOTE:
+                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                self.pika_send(result)
 
         elif isinstance(message, Message.EXIT_MENU):
             self._exit_display()

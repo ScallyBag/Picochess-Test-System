@@ -538,7 +538,7 @@ def main():
         engine.mode(ponder=ponder_mode, analyse=analyse_mode)
 
     def _dgt_serial_nr():
-        DisplayMsg.show(Message.DGT_SERIAL_NR(number=str(randrange(90000,99999))))
+        DisplayMsg.show(Message.DGT_SERIAL_NR(number=random_id))
 
     # Enable garbage collection - needed for engine swapping as objects orphaned
     gc.enable()
@@ -646,6 +646,7 @@ def main():
     if args.enable_console:
         logging.debug('starting PicoChess in console mode')
         DisplayMsg.show(Message.DGT_EBOARD_VERSION(channel='console', prefix='c00000'))  # no text flag!
+        random_id = str(randrange(90000,99999))
         RepeatedTimer(1, _dgt_serial_nr).start()  # simulate the dgtboard watchdog
     else:
         # Connect to DGT board

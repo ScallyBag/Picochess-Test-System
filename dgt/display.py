@@ -16,7 +16,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from math import floor
-from random import randrange
 import logging
 import copy
 import queue
@@ -53,7 +52,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self.uci960 = False
         self.play_mode = PlayMode.USER_WHITE
         self.low_time = False
-        self.number = str(randrange(90000, 99999))  # serial board number - kept for "exchange" calc
+        self.prefix = 'notuse'
 
     def _exit_menu(self):
         if self.dgtmenu.exit_menu():
@@ -628,8 +627,17 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._set_clock(side=side, devs=message.devs)
 
     def _process_dgt_serial_nr(self, message):
-        # logging.debug('Serial number {}'.format(message.number))  # actually used for watchdog (once a second)
-        self.number = message.number
+        try:
+            if self.prefix[0] == 'r':  # REVII
+                exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
+            else:
+                exchange = message.number
+                if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:
+                    exchange = str(int(exchange) + 70000)  # move USB boards out of serial area
+        except ValueError:
+            exchange = '00000'
+        self.dgtmenu.exchange = exchange
+
         if self.dgtmenu.get_mode() == Mode.PONDER and not self._inside_main_menu():
             if self.show_move_or_value >= self.dgtmenu.get_ponderinterval():
                 if self.hint_move:
@@ -811,17 +819,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             if self.dgtmenu.inside_updt_menu():
                 logging.debug('inside update menu => board channel not displayed')
             else:
-                try:
-                    if message.prefix[0] == 'r':  # REVII
-                        exchange = str(int(message.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
-                    else:
-                        exchange = self.number
-                        print(exchange)
-                        if message.prefix[0] == 'u' and float(message.prefix[1:]) == 1.8:
-                            exchange = str(int(exchange) + 70000)  # move USB boards out of serial area
-                except ValueError:
-                    exchange = '00000'
-                self.dgtmenu.exchange = exchange
+                self.prefix = message.prefix
                 if hasattr(message, 'text'):  # filter out the first start on console mode
                     DispatchDgt.fire(message.text)
                     self._exit_display(devs={'i2c', 'web'})  # ser is done, when clock found

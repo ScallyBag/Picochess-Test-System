@@ -253,6 +253,7 @@ class Info(MyEnum):
     VERSION = 'B00_info_version_menu'
     IPADR = 'B00_info_ipadr_menu'
     BATTERY = 'B00_info_battery_menu'
+    REMOTEID = 'B00_info_remoteid_menu'
 
 
 class InfoLoop(object):
@@ -270,6 +271,8 @@ class InfoLoop(object):
             elif item == Info.IPADR:
                 return Info.BATTERY
             elif item == Info.BATTERY:
+                return Info.REMOTEID
+            elif item == Info.REMOTEID:
                 return Info.VERSION
             return 'errInfoNext'
 
@@ -277,6 +280,8 @@ class InfoLoop(object):
         def prev(item: Info):
             """Get previous item."""
             if item == Info.VERSION:
+                return Info.REMOTEID
+            if item == Info.REMOTEID:
                 return Info.BATTERY
             if item == Info.BATTERY:
                 return Info.IPADR

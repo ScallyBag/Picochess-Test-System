@@ -532,6 +532,13 @@ class DgtTranslate(object):
             frtxt = Dgt.DISPLAY_TEXT(l='BT batterie', m='batterie', s='bt bat')
             estxt = Dgt.DISPLAY_TEXT(l='BT bateria ', m='bateria ', s='bt bat')
             ittxt = Dgt.DISPLAY_TEXT(l='BT batteria', m='batteria', s='bt bat')
+        if text_id == 'info_remoteid_menu':
+            entxt = Dgt.DISPLAY_TEXT(l='RemoteId   ', m='RemoteId', s='remote')
+            detxt = entxt
+            nltxt = entxt
+            frtxt = entxt
+            estxt = entxt
+            ittxt = entxt
         if text_id == 'system_sound_menu':
             entxt = Dgt.DISPLAY_TEXT(l='Sound      ', m='Sound   ', s='sound ')
             detxt = Dgt.DISPLAY_TEXT(l='Toene      ', m='Toene   ', s='toene ')
@@ -960,6 +967,13 @@ class DgtTranslate(object):
             frtxt = Dgt.DISPLAY_TEXT(l='batterie' + msg, m='battr' + msg, s='bat' + msg)
             estxt = Dgt.DISPLAY_TEXT(l='bateria ' + msg, m='battr' + msg, s='bat' + msg)
             ittxt = Dgt.DISPLAY_TEXT(l='batteria' + msg, m='battr' + msg, s='bat' + msg)
+        if text_id == 'remote_id':
+            entxt = Dgt.DISPLAY_TEXT(l='RemId ' + msg, m='id ' + msg, s=' ' + msg)
+            detxt = entxt
+            nltxt = entxt
+            frtxt = entxt
+            estxt = entxt
+            ittxt = entxt
 
         for txt in [entxt, detxt, nltxt, frtxt, estxt, ittxt]:
             if txt:

@@ -16,6 +16,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from math import floor
+from random import randrange
 import logging
 import copy
 import queue
@@ -52,6 +53,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self.uci960 = False
         self.play_mode = PlayMode.USER_WHITE
         self.low_time = False
+        self.number = str(randrange(90000, 99999))  # serial board number - kept for "exchange" calc
 
     def _exit_menu(self):
         if self.dgtmenu.exit_menu():
@@ -625,8 +627,9 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         side = ClockSide.LEFT if (message.turn == chess.WHITE) != self.dgtmenu.get_flip_board() else ClockSide.RIGHT
         self._set_clock(side=side, devs=message.devs)
 
-    def _process_dgt_serial_nr(self):
+    def _process_dgt_serial_nr(self, message):
         # logging.debug('Serial number {}'.format(message.number))  # actually used for watchdog (once a second)
+        self.number = message.number
         if self.dgtmenu.get_mode() == Mode.PONDER and not self._inside_main_menu():
             if self.show_move_or_value >= self.dgtmenu.get_ponderinterval():
                 if self.hint_move:
@@ -799,7 +802,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 logging.debug('time too low, disable confirm - w: %i, b: %i', message.time_white, message.time_black)
 
         elif isinstance(message, Message.DGT_SERIAL_NR):
-            self._process_dgt_serial_nr()
+            self._process_dgt_serial_nr(message)
 
         elif isinstance(message, Message.DGT_JACK_CONNECTED_ERROR):  # only working in case of 2 clocks connected!
             DispatchDgt.fire(self.dgttranslate.text('Y00_errorjack'))
@@ -808,8 +811,20 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             if self.dgtmenu.inside_updt_menu():
                 logging.debug('inside update menu => board channel not displayed')
             else:
-                DispatchDgt.fire(message.text)
-                self._exit_display(devs={'i2c', 'web'})  # ser is done, when clock found
+                try:
+                    if message.prefix[0] == 'r':  # REVII
+                        exchange = str(int(message.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
+                    else:
+                        exchange = self.number
+                        print(exchange)
+                        if message.prefix[0] == 'u' and float(message.prefix[1:]) == 1.8:
+                            exchange = str(int(exchange) + 70000)  # move USB boards out of serial area
+                except ValueError:
+                    exchange = '00000'
+                self.dgtmenu.exchange = exchange
+                if hasattr(message, 'text'):  # filter out the first start on console mode
+                    DispatchDgt.fire(message.text)
+                    self._exit_display(devs={'i2c', 'web'})  # ser is done, when clock found
 
         elif isinstance(message, Message.DGT_NO_EBOARD_ERROR):
             if self.dgtmenu.inside_updt_menu() or self.dgtmenu.inside_main_menu():

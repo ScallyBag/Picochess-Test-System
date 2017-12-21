@@ -64,6 +64,7 @@ class MenuState(object):
     SYS_INFO_VERS = 711000
     SYS_INFO_IP = 712000
     SYS_INFO_BATTERY = 713000
+    SYS_INFO_REMOTEID = 714000
     SYS_SOUND = 720000
     SYS_SOUND_BEEP = 721000  # never, always, some
     SYS_LANG = 730000
@@ -197,6 +198,7 @@ class DgtMenu(object):
 
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
         self.inside_room = False
+        self.exchange = '00000'  # (own) remote ID - calc from above but transfered to new areas
 
     def inside_updt_menu(self):
         """Inside update menu."""
@@ -523,6 +525,12 @@ class DgtMenu(object):
         text = self.dgttranslate.text(self.menu_system_info.value)
         return text
 
+    def enter_sys_info_remoteid_menu(self):
+        """Set the menu state."""
+        self.state = MenuState.SYS_INFO_REMOTEID
+        text = self.dgttranslate.text(self.menu_system_info.value)
+        return text
+
     def enter_sys_sound_menu(self):
         """Set the menu state."""
         self.state = MenuState.SYS_SOUND
@@ -789,6 +797,9 @@ class DgtMenu(object):
         elif self.state == MenuState.SYS_INFO_BATTERY:
             text = self.enter_sys_info_menu()
 
+        elif self.state == MenuState.SYS_INFO_REMOTEID:
+            text = self.enter_sys_info_menu()
+
         elif self.state == MenuState.SYS_SOUND:
             text = self.enter_sys_menu()
 
@@ -1027,6 +1038,8 @@ class DgtMenu(object):
                 text = self.enter_sys_info_ip_menu()
             if self.menu_system_info == Info.BATTERY:
                 text = self.enter_sys_info_battery_menu()
+            if self.menu_system_info == Info.REMOTEID:
+                text = self.enter_sys_info_remoteid_menu()
 
         elif self.state == MenuState.SYS_INFO_VERS:
             # do action!
@@ -1055,6 +1068,10 @@ class DgtMenu(object):
         elif self.state == MenuState.SYS_INFO_BATTERY:
             # do action!
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_bat_percent', self.battery))
+
+        elif self.state == MenuState.SYS_INFO_REMOTEID:
+            # do action!
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_remote_id', self.exchange))
 
         elif self.state == MenuState.SYS_SOUND:
             text = self.enter_sys_sound_beep_menu()
@@ -1343,7 +1360,7 @@ class DgtMenu(object):
             text = self.dgttranslate.text(self.menu_system.value)
 
         elif self.state == MenuState.SYS_INFO_VERS:
-            self.state = MenuState.SYS_INFO_BATTERY
+            self.state = MenuState.SYS_INFO_REMOTEID
             self.menu_system_info = InfoLoop.prev(self.menu_system_info)
             text = self.dgttranslate.text(self.menu_system_info.value)
 
@@ -1354,6 +1371,11 @@ class DgtMenu(object):
 
         elif self.state == MenuState.SYS_INFO_BATTERY:
             self.state = MenuState.SYS_INFO_IP
+            self.menu_system_info = InfoLoop.prev(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_REMOTEID:
+            self.state = MenuState.SYS_INFO_BATTERY
             self.menu_system_info = InfoLoop.prev(self.menu_system_info)
             text = self.dgttranslate.text(self.menu_system_info.value)
 
@@ -1604,6 +1626,11 @@ class DgtMenu(object):
             text = self.dgttranslate.text(self.menu_system_info.value)
 
         elif self.state == MenuState.SYS_INFO_BATTERY:
+            self.state = MenuState.SYS_INFO_REMOTEID
+            self.menu_system_info = InfoLoop.next(self.menu_system_info)
+            text = self.dgttranslate.text(self.menu_system_info.value)
+
+        elif self.state == MenuState.SYS_INFO_REMOTEID:
             self.state = MenuState.SYS_INFO_VERS
             self.menu_system_info = InfoLoop.next(self.menu_system_info)
             text = self.dgttranslate.text(self.menu_system_info.value)

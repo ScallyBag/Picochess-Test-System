@@ -434,9 +434,8 @@ class WebDisplay(DisplayMsg, threading.Thread):
                     exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (10k...50k)
                 else:
                     exchange = self.shared['game_info']['serial']
-                    if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:  # move USB boards out of serial area
-                        exchange = str(int(exchange) + 70000)
-                print(exchange)
+                    if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:
+                        exchange = str(int(exchange) + 70000)  # move USB boards out of serial area
 
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
                 # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))

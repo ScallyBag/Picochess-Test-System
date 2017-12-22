@@ -968,7 +968,7 @@ class DgtTranslate(object):
             estxt = Dgt.DISPLAY_TEXT(l='bateria ' + msg, m='battr' + msg, s='bat' + msg)
             ittxt = Dgt.DISPLAY_TEXT(l='batteria' + msg, m='battr' + msg, s='bat' + msg)
         if text_id == 'remote_id':
-            entxt = Dgt.DISPLAY_TEXT(l='RemId ' + msg, m='id ' + msg, s=' ' + msg)
+            entxt = Dgt.DISPLAY_TEXT(l='Rem Id ' + msg, m='Rid ' + msg, s='r ' + msg)
             detxt = entxt
             nltxt = entxt
             frtxt = entxt

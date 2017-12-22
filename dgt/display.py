@@ -488,7 +488,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         if self.dgtmenu.get_mode() in (Mode.NORMAL, Mode.BRAIN, Mode.OBSERVE, Mode.REMOTE):
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'pgn': '', 'fen': '', 'event': 'Game', 'move': '0000', 'play': 'newgame'}
+            result = {'event': 'Game', 'fen': message.game.fen(), 'move': '0000', 'play': 'newgame'}
             self.pika_send(result)
 
     def _process_computer_move(self, message):
@@ -544,7 +544,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.time_control.reset()
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'computer'}
+            result = {'event': 'Fen', 'fen': self.play_fen, 'move': self.play_move, 'play': 'computer'}
             self.pika_send(result)
 
     def _process_user_move_done(self, message):
@@ -558,7 +558,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._exit_menu()
         self._display_confirm('K05_okuser')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'user'}
+            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move, 'play': 'user'}
             self.pika_send(result)
 
     def _process_review_move_done(self, message):
@@ -569,7 +569,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._exit_menu()
         self._display_confirm('K05_okmove')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'review'}
+            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move, 'play': 'review'}
             self.pika_send(result)
 
     def _process_time_control(self, message):
@@ -658,14 +658,23 @@ class DgtDisplay(DisplayMsg, threading.Thread):
     def _process_dgt_serial_nr(self, message):
         try:
             if self.prefix[0] == 'r':  # REVII
-                exchange = str(int(self.prefix[1:]) + 50000)  # move REV2 out of dgt area (0k...50k)
+                exchange = int(self.prefix[1:]) + 50000  # move REV2 out of dgt area (0k...50k)
             else:
-                exchange = message.number
+                exchange = int(message.number)
                 if self.prefix[0] == 'u' and float(self.prefix[1:]) == 1.8:
-                    exchange = str(int(exchange) + 70000)  # move USB boards out of serial area
+                    exchange = exchange + 70000  # move USB boards out of serial area
         except ValueError:
-            exchange = '00000'
-        self.dgtmenu.exchange = exchange
+            exchange = 0
+        # transfer the 5 digit number to a 4^18 string
+        string = []
+        charlist = [chr(i) for i in list(range(48, 58)) + list(range(97, 105))]  # 0-9a-h
+        while exchange > 0:
+            remainer = int(exchange % len(charlist))
+            string.append(charlist[remainer])
+            exchange -= remainer
+            exchange /= len(charlist)
+        string.reverse()
+        self.dgtmenu.exchange = ''.join(string)
 
         if self.dgtmenu.get_mode() == Mode.PONDER and not self._inside_main_menu():
             if self.show_move_or_value >= self.dgtmenu.get_ponderinterval():
@@ -708,6 +717,13 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         DispatchDgt.fire(text)
 
     def _process_message(self, message):
+        def peek_uci(game: chess.Board):
+            """Return last move in uci format."""
+            try:
+                return game.peek().uci()
+            except IndexError:
+                return chess.Move.null().uci()
+
         if False:  # switch-case
             pass
 
@@ -741,7 +757,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.play_mode = message.play_mode
             DispatchDgt.fire(self.dgttranslate.text('B05_altmove'))
             if self.dgtmenu.get() == Mode.REMOTE:
-                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                result = {'event': 'Fen', 'fen': message.game.fen(), 'move': peek_uci(message.game), 'play': 'alternative'}
                 self.pika_send(result)
 
         elif isinstance(message, Message.LEVEL):
@@ -761,7 +777,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             DispatchDgt.fire(self.dgttranslate.text('C10_takeback'))
             DispatchDgt.fire(Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'}))
             if self.dgtmenu.get() == Mode.REMOTE:
-                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                result = {'event': 'Fen', 'fen': message.game.fen(), 'move': peek_uci(message.game), 'play': 'takeback'}
                 self.pika_send(result)
 
         elif isinstance(message, Message.GAME_ENDS):
@@ -882,7 +898,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.force_leds_off()
             logging.debug('user ignored move %s', message.move)
             if self.dgtmenu.get() == Mode.REMOTE:
-                result = {'event': 'Fen', 'pgn': '', 'fen': '', 'move': '', 'play': 'reload'}
+                result = {'event': 'Fen', 'fen': message.game.fen(), 'move': message.move.uci(), 'play': 'switchsides'}
                 self.pika_send(result)
 
         elif isinstance(message, Message.EXIT_MENU):

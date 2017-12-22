@@ -198,7 +198,7 @@ class DgtMenu(object):
 
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
         self.inside_room = False
-        self.exchange = '00000'  # (own) remote ID - "board serial id" transfered into new areas
+        self.exchange = '0000'  # (own) remote ID - "board serial id" transfered into new areas
 
     def inside_updt_menu(self):
         """Inside update menu."""

@@ -1123,18 +1123,6 @@ function boardFlip() {
 }
 
 // remote begin
-function sendRemoteMsg() {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "text", "payload": $('#remoteText').val()};
-        $("#remoteText").val("");
-        $("#remoteText").focus();
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
 function sendRemoteFen(data) {
     if(remote_ws) {
         var text_msg_obj = {"event": "Fen", "move": data.move, "fen": data.fen, "play": data.play};
@@ -1157,11 +1145,8 @@ function sendRemoteGame(fen) {
 
 function setInsideRoom() {
     $('#leaveRoomBtn').removeAttr('disabled').show();
-    $('#SendTextRemoteBtn').removeAttr('disabled');
     $('#enterRoomBtn').attr('disabled', 'disabled').hide();
-    $('#RemoteRoom').attr('disabled', 'disabled');
-    $('#RemoteNick').attr('disabled', 'disabled');
-    $('#broadcastBtn').removeAttr('disabled');
+    $('#RemoteId').attr('disabled', 'disabled');
 
     $.post('/channel', {action: 'room', room: 'inside'}, function (data) {
     });
@@ -1169,11 +1154,9 @@ function setInsideRoom() {
 
 function setOutsideRoom() {
     $('#leaveRoomBtn').attr('disabled', 'disabled').hide();
-    $('#SendTextRemoteBtn').attr('disabled', 'disabled');
-    $('#enterRoomBtn').removeAttr('disabled').show();
-    $('#RemoteRoom').removeAttr('disabled');
-    $('#RemoteNick').removeAttr('disabled');
-    $('#broadcastBtn').attr('disabled', 'disabled');
+    $('#enterRoomBtn').show();
+    $('#RemoteId').removeAttr('disabled');
+    remote_send();  // turn "connect" on/off
 
     $.post('/channel', {action: 'room', room: 'outside'}, function (data) {
     });
@@ -1187,6 +1170,7 @@ function leaveRoom() {
 }
 
 function enterRoom() {
+    /*
     $.ajax({
         dataType: 'jsonp',
         url: 'http://' + remote_server_prefix,
@@ -1217,12 +1201,13 @@ function enterRoom() {
 
             remote_ws.onmessage = receive_message;
         }
-
     }).fail(function(jqXHR, textStatus) {
         console.warn('Failed ajax request');
         console.log(jqXHR);
         dgtClockStatusEl.html(textStatus);
     });
+    */
+    console.log('enterRoom outOfFunction')
 }
 
 function format_username(username) {
@@ -1669,7 +1654,6 @@ $('#getFenToConsoleBtn').on('click', getFenToConsole);
 // remote begin
 $('#enterRoomBtn').on('click', enterRoom);
 $('#leaveRoomBtn').on('click', leaveRoom);
-$('#SendTextRemoteBtn').on('click', sendRemoteMsg);
 // remote end
 
 $("#inputConsole").keyup(function(event) {
@@ -1678,6 +1662,14 @@ $("#inputConsole").keyup(function(event) {
         $(this).val('');
     }
 });
+
+function remote_send() {
+    if ( $("#RemoteId").val().length === 4 ) {
+        $("#enterRoomBtn").removeAttr("disabled");
+    } else {
+        $("#enterRoomBtn").attr("disabled", "disabled");
+    }
+}
 
 $(function() {
     getAllInfo();
@@ -1690,16 +1682,8 @@ $(function() {
 
 // remote begin
     setOutsideRoom();
-    $("#RemoteRoom").keyup(function(event) { remote_send(); } );
-    $("#RemoteNick").keyup(function(event) { remote_send(); } );
+    $("#RemoteId").keyup(function(event) { remote_send(); } );
 
-    function remote_send() {
-        if ( $("#RemoteRoom").val() !== "" && $("#RemoteNick").val() !== "") {
-            $("#enterRoomBtn").removeAttr("disabled");
-        } else {
-            $("#enterRoomBtn").attr("disabled", "disabled");
-        }
-    }
 // remote end
 
     $(document).keydown(function(e) {

@@ -60,46 +60,20 @@
                         <ul class="dropdown-menu">
                             <li>
                                 <div style="padding: 1vw;">
-                                    <div class="col-xs-6">
-                                        <label for="RemoteRoom">Room:</label>
-                                        <input class="form-control" id="RemoteRoom" type="text" value="" maxlength="6" placeholder="max6chars">
-                                    </div>
-                                    <div class="col-xs-6">
-                                        <label for="RemoteNick">Nick:</label>
-                                        <input class="form-control" id="RemoteNick" type="text" value="" maxlength="6" placeholder="max6chars">
-                                    </div>
-                                    <div class="col-xs-12">
-                                        <button type="button" id="enterRoomBtn" class="btn btn-raised btn-success btn-sm text-break" title="enter room">
-                                            <i class='fa fa-arrow-right'></i><span class="hidden-xs"> Enter Room</span>
-                                        </button>
-                                        <button type="button" id="leaveRoomBtn" class="btn btn-raised btn-warning btn-sm text-break" title="leave room">
-                                            <i class='fa fa-arrow-left'></i><span class="hidden-xs"> Leave Room</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </li>
-                            <!--
-                            <li role="separator" class="divider"></li>
-                            <li>
-                                <div class="col-xs-12" style="padding: 1vw;">
-                                    <button type="button" id="broadcastBtn" class="btn btn-raised btn-success btn-xs text-break" title="broadcast position">
-                                        <i class='fa fa-cloud-download'></i><span class="hidden-xs"> Broadcast</span>
-                                    </button>
-                                </div>
-                            </li>
-                            -->
-                            <li role="separator" class="divider"></li>
-                            <li>
-                                <div style="padding: 1vw;">
-                                    <div class="col-xs-12">
-                                        <label for="remoteText">Chat:</label>
-                                        <input class="form-controlX" id="remoteText" type="text" value="" placeholder="enter your text">
-                                    </div>
-                                    <div class="col-xs-12">
-                                        <button type="button" id="SendTextRemoteBtn" class="btn btn-raised btn-success btn-sm text-break" title="send text">
-                                            <i class='fa fa-arrow-right'></i><span class="hidden-xs"> Send Text</span>
-                                        </button>
-                                    </div>
+                                    <form>
+                                        <div class="col-xs-12">
+                                            <label for="RemoteId">RemoteId:</label>
+                                            <input class="form-control" id="RemoteId" type="text" value="" maxlength="4" pattern="[a-h0-9]+" placeholder="PartnerId">
+                                        </div>
+                                        <div class="col-xs-12">
+                                            <button type="submit" id="enterRoomBtn" class="btn btn-raised btn-success btn-sm text-break" title="connect">
+                                                <i class='fa fa-arrow-right'></i><span class="hidden-xs"> Connect</span>
+                                            </button>
+                                            <button type="submit" id="leaveRoomBtn" class="btn btn-raised btn-warning btn-sm text-break" title="disconnect">
+                                                <i class='fa fa-arrow-left'></i><span class="hidden-xs"> Disconnect</span>
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </li>
                         </ul>

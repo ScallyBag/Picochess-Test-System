@@ -377,7 +377,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
         elif fen in mode_map:
             logging.debug('map: Interaction mode [%s]', mode_map[fen])
-            if mode_map[fen] == Mode.REMOTE and not self.dgtmenu.inside_room:
+            if mode_map[fen] == Mode.REMOTE and not self.dgtmenu.inside_room and False:
                 DispatchDgt.fire(self.dgttranslate.text('Y10_errorroom'))
             elif mode_map[fen] == Mode.BRAIN or not self.dgtmenu.get_engine_has_ponder():
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
@@ -544,7 +544,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.time_control.reset()
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'fen': self.play_fen, 'move': self.play_move, 'play': 'computer'}
+            result = {'event': 'Fen', 'fen': self.play_fen, 'move': self.play_move.uci(), 'play': 'computer'}
             self.pika_send(result)
 
     def _process_user_move_done(self, message):
@@ -558,7 +558,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._exit_menu()
         self._display_confirm('K05_okuser')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move, 'play': 'user'}
+            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'user'}
             self.pika_send(result)
 
     def _process_review_move_done(self, message):
@@ -569,7 +569,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._exit_menu()
         self._display_confirm('K05_okmove')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move, 'play': 'review'}
+            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'review'}
             self.pika_send(result)
 
     def _process_time_control(self, message):

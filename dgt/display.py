@@ -38,6 +38,7 @@ class ConsumerThread(threading.Thread):
     def __init__(self, host, *args, **kwargs):
         super(ConsumerThread, self).__init__(*args, **kwargs)
         self._host = host
+        self.channel = None
 
     # Not necessarily a method.
     def callback_func(self, channel, method, properties, body):
@@ -46,15 +47,18 @@ class ConsumerThread(threading.Thread):
     def run(self):
         exchange = self._host
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=exchange, exchange_type='fanout')
+        self.channel = connection.channel()
+        self.channel.exchange_declare(exchange=exchange, exchange_type='fanout')
 
-        result = channel.queue_declare(exclusive=True)
+        result = self.channel.queue_declare(exclusive=True)
         queue_name = result.method.queue
-        channel.queue_bind(exchange=exchange, queue=queue_name)
+        self.channel.queue_bind(exchange=exchange, queue=queue_name)
 
-        channel.basic_consume(self.callback_func, queue=queue_name, no_ack=True)
-        channel.start_consuming()
+        self.channel.basic_consume(self.callback_func, queue=queue_name, no_ack=True)
+        self.channel.start_consuming()
+
+    def stop(self):
+        self.channel.close()
 
 
 class DgtDisplay(DisplayMsg, threading.Thread):
@@ -965,9 +969,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 self.pika = ConsumerThread(self.dgtmenu.remote_id)
                 self.pika.start()
             elif self.pika:
-                # self.pika.stop()
-                print('STOP IT')
-            print('pika', self.pika)
+                self.pika.stop()
 
         else:  # Default
             pass

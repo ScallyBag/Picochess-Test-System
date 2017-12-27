@@ -34,6 +34,29 @@ import pika.exceptions
 import json
 
 
+class ConsumerThread(threading.Thread):
+    def __init__(self, host, *args, **kwargs):
+        super(ConsumerThread, self).__init__(*args, **kwargs)
+        self._host = host
+
+    # Not necessarily a method.
+    def callback_func(self, channel, method, properties, body):
+        print("{} received '{}'".format(self.name, body))
+
+    def run(self):
+        exchange = self._host
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=exchange, exchange_type='fanout')
+
+        result = channel.queue_declare(exclusive=True)
+        queue_name = result.method.queue
+        channel.queue_bind(exchange=exchange, queue=queue_name)
+
+        channel.basic_consume(self.callback_func, queue=queue_name, no_ack=True)
+        channel.start_consuming()
+
+
 class DgtDisplay(DisplayMsg, threading.Thread):
 
     """Dispatcher for Messages towards DGT hardware or back to the event system (picochess)."""
@@ -57,6 +80,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self.play_mode = PlayMode.USER_WHITE
         self.low_time = False
         self.prefix = 'notuse'
+        self.pika = None
 
     def _exit_menu(self):
         if self.dgtmenu.exit_menu():
@@ -377,9 +401,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
         elif fen in mode_map:
             logging.debug('map: Interaction mode [%s]', mode_map[fen])
-            if mode_map[fen] == Mode.REMOTE and not self.dgtmenu.inside_room and False:
-                DispatchDgt.fire(self.dgttranslate.text('Y10_errorroom'))
-            elif mode_map[fen] == Mode.BRAIN or not self.dgtmenu.get_engine_has_ponder():
+            if mode_map[fen] == Mode.BRAIN or not self.dgtmenu.get_engine_has_ponder():
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
             else:
                 self.dgtmenu.set_mode(mode_map[fen])
@@ -436,18 +458,35 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             else:
                 Observable.fire(Event.FEN(fen=fen))
 
-    def pika_send(self, message):
+    def pika_local(self, message):
         # send to own exchange @rabbitmq server
         exchange = self.dgtmenu.exchange
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
-            # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
             channel = connection.channel()
             channel.exchange_declare(exchange=exchange, exchange_type='fanout')
             channel.basic_publish(exchange=exchange, routing_key='', body=json.dumps(message))
             connection.close()
         except pika.exceptions.ConnectionClosed:
             pass
+
+    def pika_remote(self):
+        # send to remote exchange @rabbitmq server
+        exchange = self.dgtmenu.remote_id
+        print('pika_remote', exchange)
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=exchange, exchange_type='fanout')
+
+        result = channel.queue_declare(exclusive=True)
+        queue_name = result.method.queue
+        channel.queue_bind(exchange=exchange, queue=queue_name)
+
+        def callback(ch, method, properties, body):
+            print("[x] %r" % body)
+
+        channel.basic_consume(callback, queue=queue_name, no_ack=True)
+        channel.start_consuming()
 
     def _process_engine_ready(self, message):
         for index in range(0, len(self.dgtmenu.installed_engines)):
@@ -489,7 +528,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
             result = {'event': 'Game', 'fen': message.game.fen(), 'move': '0000', 'play': 'newgame'}
-            self.pika_send(result)
+            self.pika_local(result)
 
     def _process_computer_move(self, message):
         self.force_leds_off(log=True)  # can happen in case of a book move
@@ -545,7 +584,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
             result = {'event': 'Fen', 'fen': self.play_fen, 'move': self.play_move.uci(), 'play': 'computer'}
-            self.pika_send(result)
+            self.pika_local(result)
 
     def _process_user_move_done(self, message):
         self.force_leds_off(log=True)  # can happen in case of a sliding move
@@ -559,7 +598,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._display_confirm('K05_okuser')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
             result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'user'}
-            self.pika_send(result)
+            self.pika_local(result)
 
     def _process_review_move_done(self, message):
         self.force_leds_off(log=True)  # can happen in case of a sliding move
@@ -570,7 +609,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
         self._display_confirm('K05_okmove')
         if self.dgtmenu.get_mode() == Mode.REMOTE:
             result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'review'}
-            self.pika_send(result)
+            self.pika_local(result)
 
     def _process_time_control(self, message):
         wait = not self.dgtmenu.get_confirm() or not message.show_ok
@@ -758,7 +797,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             DispatchDgt.fire(self.dgttranslate.text('B05_altmove'))
             if self.dgtmenu.get() == Mode.REMOTE:
                 result = {'event': 'Fen', 'fen': message.game.fen(), 'move': peek_uci(message.game), 'play': 'alternative'}
-                self.pika_send(result)
+                self.pika_local(result)
 
         elif isinstance(message, Message.LEVEL):
             if not self.dgtmenu.get_engine_restart():
@@ -778,7 +817,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             DispatchDgt.fire(Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'}))
             if self.dgtmenu.get() == Mode.REMOTE:
                 result = {'event': 'Fen', 'fen': message.game.fen(), 'move': peek_uci(message.game), 'play': 'takeback'}
-                self.pika_send(result)
+                self.pika_local(result)
 
         elif isinstance(message, Message.GAME_ENDS):
             if not self.dgtmenu.get_engine_restart():  # filter out the shutdown/reboot process
@@ -856,7 +895,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                                              dev=message.dev))
             if self.dgtmenu.get() == Mode.REMOTE:
                 result = {'event': 'Clock', 'white': message.time_white, 'black': message.time_black}
-                self.pika_send(result)
+                self.pika_local(result)
 
         elif isinstance(message, Message.CLOCK_TIME):
             self.low_time = message.low_time
@@ -899,7 +938,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             logging.debug('user ignored move %s', message.move)
             if self.dgtmenu.get() == Mode.REMOTE:
                 result = {'event': 'Fen', 'fen': message.game.fen(), 'move': message.move.uci(), 'play': 'switchsides'}
-                self.pika_send(result)
+                self.pika_local(result)
 
         elif isinstance(message, Message.EXIT_MENU):
             self._exit_display()
@@ -920,7 +959,15 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             self.dgtmenu.battery = percent
 
         elif isinstance(message, Message.REMOTE_ROOM):
-            self.dgtmenu.inside_room = message.inside
+            self.dgtmenu.remote_id = message.remote_id
+            logging.debug('remote pika %s', 'started' if message.remote_id else 'stopped')
+            if message.remote_id:
+                self.pika = ConsumerThread(self.dgtmenu.remote_id)
+                self.pika.start()
+            elif self.pika:
+                # self.pika.stop()
+                print('STOP IT')
+            print('pika', self.pika)
 
         else:  # Default
             pass

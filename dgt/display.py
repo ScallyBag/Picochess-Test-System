@@ -407,7 +407,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
         elif fen in mode_map:
             logging.debug('map: Interaction mode [%s]', mode_map[fen])
-            if mode_map[fen] == Mode.BRAIN or not self.dgtmenu.get_engine_has_ponder():
+            if mode_map[fen] == Mode.BRAIN and not self.dgtmenu.get_engine_has_ponder():
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
             else:
                 self.dgtmenu.set_mode(mode_map[fen])

@@ -1122,34 +1122,10 @@ function boardFlip() {
     chessground1.toggleOrientation();
 }
 
-// remote begin
-function sendRemoteFen(data) {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "Fen", "move": data.move, "fen": data.fen, "play": data.play};
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
-function sendRemoteGame(fen) {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "Game", "fen": fen};
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
 function setInsideRoom() {
     $('#leaveRoomBtn').removeAttr('disabled').show();
     $('#enterRoomBtn').attr('disabled', 'disabled').hide();
     $('#RemoteId').attr('disabled', 'disabled');
-
-    $.post('/channel', {action: 'room', room: 'inside'}, function (data) {
-    });
 }
 
 function setOutsideRoom() {
@@ -1157,57 +1133,18 @@ function setOutsideRoom() {
     $('#enterRoomBtn').show();
     $('#RemoteId').removeAttr('disabled');
     remote_send();  // turn "connect" on/off
-
-    $.post('/channel', {action: 'room', room: 'outside'}, function (data) {
-    });
 }
 
 function leaveRoom() {
     setOutsideRoom();
-    if(remote_ws) {
-        remote_ws.close();
-    }
+    $.post('/channel', {action: 'room', room: null}, function (data) {
+    });
 }
 
 function enterRoom() {
-    /*
-    $.ajax({
-        dataType: 'jsonp',
-        url: 'http://' + remote_server_prefix,
-        data: {
-            room: $('#RemoteRoom').val(),
-            nick: $('#RemoteNick').val()
-        }
-    }).done(function(data) {
-        console.log(data);
-        if(data.result === 'OK') {
-            setInsideRoom();
-
-            remote_ws = new WebSocket("ws://" + remote_server_prefix + "/ws/" + data.client_id);
-
-            remote_ws.onopen = function (event) {
-                console.log("RemoteChessServerSocket opened");
-            };
-
-            remote_ws.onclose = function () {
-                console.log("RemoteChessServerSocket closed");
-                setOutsideRoom();
-            };
-
-            remote_ws.onerror = function (event) {
-                console.warn("RemoteChessServerSocket error");
-                dgtClockStatusEl.html(event.data);
-            };
-
-            remote_ws.onmessage = receive_message;
-        }
-    }).fail(function(jqXHR, textStatus) {
-        console.warn('Failed ajax request');
-        console.log(jqXHR);
-        dgtClockStatusEl.html(textStatus);
+    setInsideRoom();
+    $.post('/channel', {action: 'room', room: $('#RemoteId').val()}, function (data) {
     });
-    */
-    console.log('enterRoom outOfFunction')
 }
 
 function format_username(username) {

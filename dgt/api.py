@@ -233,7 +233,7 @@ class Message():
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
     BATTERY = ClassFactory(MessageApi.BATTERY, ['percent'])
     UPDATE_PICO = ClassFactory(MessageApi.UPDATE_PICO, [])
-    REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['inside'])
+    REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['remote_id'])
 
 
 class Event():
@@ -275,4 +275,4 @@ class Event():
     # special events
     EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, [])
     UPDATE_PICO = ClassFactory(EventApi.UPDATE_PICO, ['tag'])
-    REMOTE_ROOM = ClassFactory(EventApi.REMOTE_ROOM, ['inside'])
+    REMOTE_ROOM = ClassFactory(EventApi.REMOTE_ROOM, ['remote_id'])

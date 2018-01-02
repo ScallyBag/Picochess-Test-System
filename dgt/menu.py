@@ -198,8 +198,8 @@ class DgtMenu(object):
         self.updt_version = 0  # index to current version
 
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
-        self.inside_room = False
-        self.exchange = '0000'  # (own) remote ID - "board serial id" transfered into new areas
+        self.remote_id = False  # remote ID (WAN) - "board serial id" (bsi) this program is connected to (=partner)
+        self.exchange = '0000'  # remote ID (LAN) - "board serial id" (bsi) transfered into new areas
 
     def inside_updt_menu(self):
         """Inside update menu."""
@@ -905,9 +905,7 @@ class DgtMenu(object):
 
         elif self.state == MenuState.MODE_TYPE:
             # maybe do action!
-            if self.menu_mode == Mode.REMOTE and not self.inside_room and False:
-                text = self.dgttranslate.text('Y10_errorroom')
-            elif self.menu_mode == Mode.BRAIN and not self.get_engine_has_ponder():
+            if self.menu_mode == Mode.BRAIN and not self.get_engine_has_ponder():
                 DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
                 text = Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'})
             else:

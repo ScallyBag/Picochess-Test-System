@@ -83,7 +83,7 @@ class EventApi():
     # Special events
     EXIT_MENU = 'EVT_EXIT_MENU'  # User exists the menu
     UPDATE_PICO = 'EVT_UPDATE'  # User wants to upgrade/downgrade picochess
-    REMOTE_ROOM = 'EVT_REMOTE_ROOM'  # User enters/leaves the remote room
+    REMOTE_ID = 'EVT_REMOTE_ID'  # User enters/leaves the remote room
 
 
 class MessageApi():
@@ -140,7 +140,7 @@ class MessageApi():
     WRONG_FEN = 'MSG_WRONG_FEN'  # User sends a wrong placement of pieces (timed)
     BATTERY = 'MSG_BATTERY'  # percent of BT battery
     UPDATE_PICO = 'MSG_UPDATE'  # User wants to update picochess
-    REMOTE_ROOM = 'MSG_REMOTE_ROOM'  # User enters/leaves a remote room
+    REMOTE_ID = 'MSG_REMOTE_ID'  # User enters/leaves a remote room
 
 
 class DgtApi():
@@ -233,7 +233,7 @@ class Message():
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
     BATTERY = ClassFactory(MessageApi.BATTERY, ['percent'])
     UPDATE_PICO = ClassFactory(MessageApi.UPDATE_PICO, [])
-    REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['remote_id'])
+    REMOTE_ID = ClassFactory(MessageApi.REMOTE_ID, ['remote_id'])
 
 
 class Event():
@@ -275,4 +275,4 @@ class Event():
     # special events
     EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, [])
     UPDATE_PICO = ClassFactory(EventApi.UPDATE_PICO, ['tag'])
-    REMOTE_ROOM = ClassFactory(EventApi.REMOTE_ROOM, ['remote_id'])
+    REMOTE_ID = ClassFactory(EventApi.REMOTE_ID, ['remote_id'])

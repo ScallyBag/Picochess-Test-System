@@ -19,7 +19,7 @@ from math import floor
 import logging
 import copy
 import queue
-import threading
+from threading import Thread
 
 import chess
 from utilities import DisplayMsg, Observable, DispatchDgt, write_picochess_ini
@@ -34,9 +34,9 @@ import pika.exceptions
 import json
 
 
-class ConsumerThread(threading.Thread):
+class PikaRemoteThread(Thread):
     def __init__(self, host, *args, **kwargs):
-        super(ConsumerThread, self).__init__(*args, **kwargs)
+        super(PikaRemoteThread, self).__init__(*args, **kwargs)
         self._host = host
         self.channel = None
 
@@ -61,7 +61,7 @@ class ConsumerThread(threading.Thread):
         self.channel.close()
 
 
-class DgtDisplay(DisplayMsg, threading.Thread):
+class DgtDisplay(DisplayMsg, Thread):
 
     """Dispatcher for Messages towards DGT hardware or back to the event system (picochess)."""
 
@@ -466,7 +466,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
 
     def pika_local(self, message):
         # send to own exchange @rabbitmq server
-        exchange = self.dgtmenu.exchange
+        exchange = self.dgtmenu.local_id
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
             channel = connection.channel()
@@ -475,24 +475,6 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             connection.close()
         except pika.exceptions.ConnectionClosed:
             pass
-
-    def pika_remote(self):
-        # send to remote exchange @rabbitmq server
-        exchange = self.dgtmenu.remote_id
-        print('pika_remote', exchange)
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='178.63.72.77'))
-        channel = connection.channel()
-        channel.exchange_declare(exchange=exchange, exchange_type='fanout')
-
-        result = channel.queue_declare(exclusive=True)
-        queue_name = result.method.queue
-        channel.queue_bind(exchange=exchange, queue=queue_name)
-
-        def callback(ch, method, properties, body):
-            print("[x] %r" % body)
-
-        channel.basic_consume(callback, queue=queue_name, no_ack=True)
-        channel.start_consuming()
 
     def _process_engine_ready(self, message):
         for index in range(0, len(self.dgtmenu.installed_engines)):
@@ -719,7 +701,7 @@ class DgtDisplay(DisplayMsg, threading.Thread):
             exchange -= remainer
             exchange /= len(charlist)
         string.reverse()
-        self.dgtmenu.exchange = ''.join(string)
+        self.dgtmenu.local_id = ''.join(string)
 
         if self.dgtmenu.get_mode() == Mode.PONDER and not self._inside_main_menu():
             if self.show_move_or_value >= self.dgtmenu.get_ponderinterval():
@@ -964,11 +946,11 @@ class DgtDisplay(DisplayMsg, threading.Thread):
                 percent = str(message.percent)
             self.dgtmenu.battery = percent
 
-        elif isinstance(message, Message.REMOTE_ROOM):
+        elif isinstance(message, Message.REMOTE_ID):
             self.dgtmenu.remote_id = message.remote_id
             logging.debug('remote pika %s', 'started' if message.remote_id else 'stopped')
             if message.remote_id:
-                self.pika = ConsumerThread(self.dgtmenu.remote_id)
+                self.pika = PikaRemoteThread(self.dgtmenu.remote_id)
                 self.pika.start()
             elif self.pika:
                 self.pika.stop()

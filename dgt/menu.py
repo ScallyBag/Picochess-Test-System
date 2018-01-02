@@ -199,7 +199,7 @@ class DgtMenu(object):
 
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
         self.remote_id = False  # remote ID (WAN) - "board serial id" (bsi) this program is connected to (=partner)
-        self.exchange = '0000'  # remote ID (LAN) - "board serial id" (bsi) transfered into new areas
+        self.local_id = '0000'  # remote ID (LAN) - "board serial id" (bsi) transfered into new areas
 
     def inside_updt_menu(self):
         """Inside update menu."""
@@ -1072,7 +1072,7 @@ class DgtMenu(object):
 
         elif self.state == MenuState.SYS_INFO_REMOTEID:
             # do action!
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_remote_id', self.exchange))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_remote_id', self.local_id))
 
         elif self.state == MenuState.SYS_SOUND:
             text = self.enter_sys_sound_beep_menu()

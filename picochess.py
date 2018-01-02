@@ -1142,8 +1142,8 @@ def main():
                 checkout_tag(event.tag)
                 DisplayMsg.show(Message.EXIT_MENU())
 
-            elif isinstance(event, Event.REMOTE_ROOM):
-                DisplayMsg.show(Message.REMOTE_ROOM(remote_id=event.remote_id))
+            elif isinstance(event, Event.REMOTE_ID):
+                DisplayMsg.show(Message.REMOTE_ID(remote_id=event.remote_id))
 
             else:  # Default
                 logging.warning('event not handled : [%s]', event)

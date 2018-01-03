@@ -42,7 +42,7 @@ class PikaRemoteThread(Thread):
 
     # Not necessarily a method.
     def callback_func(self, channel, method, properties, body):
-        result = json.loads(body)
+        result = json.loads(body.decode('utf-8'))
         if False:  # switch-case
             pass
         elif 'Fen' in result:

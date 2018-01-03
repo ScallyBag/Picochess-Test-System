@@ -63,7 +63,7 @@ class PikaRemoteThread(Thread):
                 Observable.fire(Event.SWITCH_SIDES())
         elif event == 'Game':
             # result = {'event': 'Game', 'fen': message.game.fen(), 'move': '0000', 'play': 'newgame'}
-            bit_board = chess.Board(result['fen'] + ' w - - 0 1')
+            bit_board = chess.Board(result['fen'])
             pos960 = bit_board.chess960_pos(ignore_castling=True)
             Observable.fire(Event.NEW_GAME(pos960=pos960))
         elif event == 'Clock':

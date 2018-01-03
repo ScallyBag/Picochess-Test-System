@@ -43,11 +43,13 @@ class PikaRemoteThread(Thread):
     # Not necessarily a method.
     def callback_func(self, channel, method, properties, body):
         result = json.loads(body.decode('utf-8'))
+        event = result['event']
         if False:  # switch-case
             pass
-        elif 'Fen' in result:
+        elif event == 'Fen':
             # result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'user'}
             if result['play'] == 'user':
+                print('REMOTE MOVE')
                 Observable.fire(Event.REMOTE_MOVE(move=result['move'], fen=result['fen']))
             if result['play'] == 'computer':
                 pass
@@ -59,12 +61,12 @@ class PikaRemoteThread(Thread):
                 pass
             if result['play'] == 'switchsides':
                 Observable.fire(Event.SWITCH_SIDES())
-        elif 'Game' in result:
+        elif event == 'Game':
             # result = {'event': 'Game', 'fen': message.game.fen(), 'move': '0000', 'play': 'newgame'}
             bit_board = chess.Board(result['fen'] + ' w - - 0 1')
             pos960 = bit_board.chess960_pos(ignore_castling=True)
             Observable.fire(Event.NEW_GAME(pos960=pos960))
-        elif 'Clock' in result:
+        elif event == 'Clock':
             # result = {'event': 'Clock', 'white': message.time_white, 'black': message.time_black}
             pass
         print("{} received '{}'".format(self.name, result))

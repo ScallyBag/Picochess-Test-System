@@ -49,8 +49,8 @@ class PikaRemoteThread(Thread):
         elif event == 'Fen':
             # result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'user'}
             if result['play'] == 'user':
-                print('REMOTE MOVE')
-                Observable.fire(Event.REMOTE_MOVE(move=result['move'], fen=result['fen']))
+                move = chess.Move.from_uci(result['move'])
+                Observable.fire(Event.REMOTE_MOVE(move=move, fen=result['fen']))
             if result['play'] == 'computer':
                 pass
             if result['play'] == 'review':

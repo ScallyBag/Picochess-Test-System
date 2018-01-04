@@ -44,15 +44,20 @@ class PikaRemoteThread(Thread):
     def callback_func(self, channel, method, properties, body):
         result = json.loads(body.decode('utf-8'))
         event = result['event']
+        do_print = True
         if False:  # switch-case
             pass
         elif event == 'Fen':
             # result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'user'}
             if result['play'] == 'user':
                 move = chess.Move.from_uci(result['move'])
+                do_print = False
+                print('received *NEW* move: {} , his board ahead ; pls follow this move on yr board now'.format(move))
                 Observable.fire(Event.REMOTE_MOVE(move=move, fen=result['fen']))
             if result['play'] == 'computer':
-                pass
+                move = chess.Move.from_uci(result['move'])
+                do_print = False
+                print('remote followed *YOUR* move: {} , boards in sync ; pls wait for remote move now'.format(move))
             if result['play'] == 'review':
                 pass
             if result['play'] == 'alternative':
@@ -65,11 +70,14 @@ class PikaRemoteThread(Thread):
             # result = {'event': 'Game', 'fen': message.game.fen(), 'move': '0000', 'play': 'newgame'}
             bit_board = chess.Board(result['fen'])
             pos960 = bit_board.chess960_pos(ignore_castling=True)
-            Observable.fire(Event.NEW_GAME(pos960=pos960))
+            do_print = False
+            print('received *NEWGAME* wish: {} , his board ahead ; pls follow this wish on yr board now'.format(pos960))
+            # Observable.fire(Event.NEW_GAME(pos960=pos960))
         elif event == 'Clock':
             # result = {'event': 'Clock', 'white': message.time_white, 'black': message.time_black}
             pass
-        print("{} received '{}'".format(self.name, result))
+        if do_print:
+            print("{} received '{}'".format(self.name, result))
 
     def run(self):
         exchange = self._host
@@ -598,7 +606,7 @@ class DgtDisplay(DisplayMsg, Thread):
             self.time_control.reset()
             self._set_clock()
         if self.dgtmenu.get_mode() == Mode.REMOTE:
-            result = {'event': 'Fen', 'fen': self.play_fen, 'move': self.play_move.uci(), 'play': 'computer'}
+            result = {'event': 'Fen', 'fen': self.last_fen, 'move': self.last_move.uci(), 'play': 'computer'}
             self.pika_local(result)
 
     def _process_user_move_done(self, message):

@@ -619,6 +619,9 @@ def main():
                             format='%(asctime)s.%(msecs)03d %(levelname)7s %(module)10s - %(funcName)s: %(message)s',
                             datefmt="%Y-%m-%d %H:%M:%S", handlers=[handler])
     logging.getLogger('chess.engine').setLevel(logging.INFO)  # don't want to get so many python-chess uci messages
+    logging.getLogger('pika.callback').setLevel(logging.INFO)  # don't want to get so many pika messages
+    logging.getLogger('pika.channel').setLevel(logging.INFO)  # don't want to get so many pika messages
+    logging.getLogger('pika.connection').setLevel(logging.INFO)  # don't want to get so many pika messages
 
     logging.debug('#' * 20 + ' PicoChess v%s ' + '#' * 20, version)
     # log the startup parameters but hide the password fields

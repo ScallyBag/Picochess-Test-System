@@ -352,6 +352,7 @@ class DgtDisplay(DisplayMsg, Thread):
                     'rnbqkbnr/pppppppp/8/3Q4/8/8/PPPPPPPP/RNBQKBNR': Mode.KIBITZ,
                     'rnbqkbnr/pppppppp/8/4Q3/8/8/PPPPPPPP/RNBQKBNR': Mode.OBSERVE,
                     'rnbqkbnr/pppppppp/8/5Q2/8/8/PPPPPPPP/RNBQKBNR': Mode.PONDER,
+                    'rnbqkbnr/pppppppp/8/6Q1/8/8/PPPPPPPP/RNBQKBNR': Mode.REMOTE,  # @todo fix this (remote as Black)
                     'rnbqkbnr/pppppppp/8/7Q/8/8/PPPPPPPP/RNBQKBNR': Mode.REMOTE}
 
         drawresign_map = {'8/8/8/3k4/4K3/8/8/8': GameResult.WIN_WHITE,
@@ -448,7 +449,8 @@ class DgtDisplay(DisplayMsg, Thread):
                 self.dgtmenu.set_mode(mode_map[fen])
                 text = self.dgttranslate.text(mode_map[fen].value)
                 text.beep = self.dgttranslate.bl(BeepLevel.MAP)
-                text.maxtime = 1  # wait 1sec not forever
+                # @todo fix this - 2 means wQg5 => Mode.REMOTE as black ... really ugly
+                text.maxtime = 2 if fen == 'rnbqkbnr/pppppppp/8/6Q1/8/8/PPPPPPPP/RNBQKBNR' else 1  # wait 1sec not forever
                 text.wait = self._exit_menu()
                 Observable.fire(Event.SET_INTERACTION_MODE(mode=mode_map[fen], mode_text=text, show_ok=False))
 

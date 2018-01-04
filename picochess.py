@@ -166,6 +166,8 @@ def main():
     def analyse(game: chess.Board, msg: Message):
         """Start a new ponder search on the current game."""
         DisplayMsg.show(msg)
+        if interaction_mode == Mode.REMOTE:  # @todo removed for Mode.REMOTE right now => make it EASY! fix it.
+            return
         engine.position(copy.deepcopy(game))
         engine.ponder()
 
@@ -386,19 +388,6 @@ def main():
             else:
                 legal_fens = compute_legal_fens(game.copy())
 
-        # legal move
-        elif fen in legal_fens:
-            logging.info('standard move detected')
-            # time_control.add_inc(game.turn)  # deactivated and moved to user_move() cause tc still running :-(
-            legal_moves = list(game.legal_moves)
-            move = legal_moves[legal_fens.index(fen)]  # type: chess.Move
-            user_move(move, sliding=False)
-            last_legal_fens = legal_fens
-            if interaction_mode in (Mode.NORMAL, Mode.BRAIN, Mode.REMOTE):
-                legal_fens = []
-            else:
-                legal_fens = compute_legal_fens(game.copy())
-
         # Player had done the computer or remote move on the board
         elif fen == done_computer_fen:
             logging.info('done move detected')
@@ -420,6 +409,19 @@ def main():
 
                 legal_fens = compute_legal_fens(game.copy())
             last_legal_fens = []
+
+        # legal move  - REMOTE: must be below the "done_computer_move" section (above)
+        elif fen in legal_fens:
+            logging.info('standard move detected')
+            # time_control.add_inc(game.turn)  # deactivated and moved to user_move() cause tc still running :-(
+            legal_moves = list(game.legal_moves)
+            move = legal_moves[legal_fens.index(fen)]  # type: chess.Move
+            user_move(move, sliding=False)
+            last_legal_fens = legal_fens
+            if interaction_mode in (Mode.NORMAL, Mode.BRAIN, Mode.REMOTE):
+                legal_fens = []
+            else:
+                legal_fens = compute_legal_fens(game.copy())
 
         # Check if this is a previous legal position and allow user to restart from this position
         else:
@@ -619,9 +621,10 @@ def main():
                             format='%(asctime)s.%(msecs)03d %(levelname)7s %(module)10s - %(funcName)s: %(message)s',
                             datefmt="%Y-%m-%d %H:%M:%S", handlers=[handler])
     logging.getLogger('chess.engine').setLevel(logging.INFO)  # don't want to get so many python-chess uci messages
-    logging.getLogger('pika.callback').setLevel(logging.INFO)  # don't want to get so many pika messages
-    logging.getLogger('pika.channel').setLevel(logging.INFO)  # don't want to get so many pika messages
-    logging.getLogger('pika.connection').setLevel(logging.INFO)  # don't want to get so many pika messages
+    logging.getLogger('pika.callback').setLevel(logging.WARNING)  # don't want to get so many pika messages
+    logging.getLogger('pika.channel').setLevel(logging.WARNING)  # don't want to get so many pika messages
+    logging.getLogger('pika.connection').setLevel(logging.WARNING)  # don't want to get so many pika messages
+    logging.getLogger('pika.blocking_connection').setLevel(logging.WARNING)  # don't want to get so many pika messages
 
     logging.debug('#' * 20 + ' PicoChess v%s ' + '#' * 20, version)
     # log the startup parameters but hide the password fields
@@ -1058,6 +1061,10 @@ def main():
                     stop_search_and_clock()
                     interaction_mode = event.mode
                     engine_mode()
+                    if event.mode_text.maxtime == 2:  # @todo for Mode.REMOTE switch to BLACK (wQg5) fix it ... ugly!
+                        event.mode_text.maxtime = 1
+                        play_mode = PlayMode.USER_BLACK
+                        print('you play BLACK!')
                     msg = Message.INTERACTION_MODE(mode=event.mode, mode_text=event.mode_text, show_ok=event.show_ok)
                     set_wait_state(msg)  # dont clear searchmoves here
 

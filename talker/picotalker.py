@@ -266,7 +266,8 @@ class PicoTalkerDisplay(DisplayMsg, threading.Thread):
                 elif isinstance(message, Message.CLOCK_TIME):
                     self.low_time = message.low_time
                     if self.low_time:
-                        logging.debug('time too low, disable voice - w: %i, b: %i', message.time_white, message.time_black)
+                        logging.debug('time too low, disable voice - w: %i, b: %i', message.time_white,
+                                      message.time_black)
 
                 elif isinstance(message, Message.ALTERNATIVE_MOVE):
                     self.play_mode = message.play_mode

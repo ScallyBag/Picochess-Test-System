@@ -241,7 +241,8 @@ class WebVr(DgtIface):
 
     def display_move_on_clock(self, message):
         """Display a move on the web clock."""
-        if self.enable_dgt3000 or self.enable_dgtpi:
+        is_new_rev2 = self.dgtboard.is_revelation and self.dgtboard.enable_revelation_pi  # @todo check >=v3.25A
+        if self.enable_dgt3000 or is_new_rev2 or self.enable_dgtpi:
             bit_board, text = self.get_san(message, not self.enable_dgtpi)
             points = '...' if message.side == ClockSide.RIGHT else '.'
             if self.enable_dgtpi:
@@ -269,7 +270,8 @@ class WebVr(DgtIface):
         if self.enable_dgtpi:
             text = message.l
         else:
-            text = message.m if self.enable_dgt3000 else message.s
+            is_new_rev2 = self.dgtboard.is_revelation and self.dgtboard.enable_revelation_pi  # @todo check >=v3.25A
+            text = message.m if self.enable_dgt3000 or is_new_rev2 else message.s
         if text is None:
             text = message.m
         if self.get_name() not in message.devs:

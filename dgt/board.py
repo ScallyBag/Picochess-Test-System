@@ -33,12 +33,16 @@ class DgtBoard(object):
 
     """Handle the DGT board communication."""
 
-    def __init__(self, device: str, disable_revelation_leds: bool, is_pi: bool, disable_end: bool, field_factor=0):
+    def __init__(self, device: str, disable_revelation_leds: bool, enable_revelation_pi: bool, is_pi: bool,
+                 disable_end: bool, field_factor=0):
         super(DgtBoard, self).__init__()
         self.given_device = device
         self.device = device
-        self.use_revelation_leds = False
+        # rev2 flags
         self.disable_revelation_leds = disable_revelation_leds
+        self.enable_revelation_pi = enable_revelation_pi
+        self.is_revelation = False
+
         self.is_pi = is_pi
         self.disable_end = disable_end  # @todo for test - XL needs a "end_text" maybe!
         self.field_factor = field_factor % 10
@@ -106,6 +110,8 @@ class DgtBoard(object):
             logging.debug('(ser) board put [%s] length: %i', mes, len(message))
             if mes.value == DgtClk.DGT_CMD_CLOCK_ASCII.value:
                 logging.debug('sending text [%s] to (ser) clock', ''.join([chr(elem) for elem in message[4:12]]))
+            if mes.value == DgtClk.DGT_CMD_REV2_ASCII.value:
+                logging.debug('sending text [%s] to (rev) clock', ''.join([chr(elem) for elem in message[4:15]]))
 
         array = []
         char_to_xl = {
@@ -178,12 +184,10 @@ class DgtBoard(object):
             else:
                 btname5 = self.bt_name[-5:]
                 if 'REVII' in self.bt_name:
-                    text_l, text_m, text_s = 'RevII ' + btname5, 'Rev' + btname5, 'r' + btname5
-                    if not self.disable_revelation_leds:
-                        self.use_revelation_leds = True
+                    text_l, text_m, text_s = 'RevII ' + btname5, 'Rev' + btname5, 'b' + btname5
+                    self.is_revelation = True
                 elif 'DGT_BT' in self.bt_name:
                     text_l, text_m, text_s = 'DGTBT ' + btname5, 'BT ' + btname5, 'b' + btname5
-                    self.use_revelation_leds = False
                 else:
                     text_l, text_m, text_s = 'BT e-Board', 'BT board', 't' + board_version.replace('.', '').rjust(5)
                 prefix = text_s
@@ -743,7 +747,8 @@ class DgtBoard(object):
 
     def light_squares_on_revelation(self, uci_move: str):
         """Light the Rev2 leds."""
-        if self.use_revelation_leds:
+        if self.is_revelation and not self.disable_revelation_leds:
+            # self._wait_for_clock('LIGHTon')
             logging.debug('(rev) leds turned on - move: %s', uci_move)
             fr_s = (8 - int(uci_move[1])) * 8 + ord(uci_move[0]) - ord('a')
             to_s = (8 - int(uci_move[3])) * 8 + ord(uci_move[2]) - ord('a')
@@ -751,7 +756,8 @@ class DgtBoard(object):
 
     def clear_light_on_revelation(self):
         """Clear the Rev2 leds."""
-        if self.use_revelation_leds:
+        if self.is_revelation and not self.disable_revelation_leds:
+            # self._wait_for_clock('LIGHToff')
             logging.debug('(rev) leds turned off')
             self.write_command([DgtCmd.DGT_SET_LEDS, 0x04, 0x00, 0x40, 0x40, DgtClk.DGT_CMD_CLOCK_END_MESSAGE])
     # dgtHw functions end

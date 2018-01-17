@@ -653,7 +653,9 @@ class DgtDisplay(DisplayMsg, Thread):
             text = self.dgttranslate.text('N10_mate', str(message.mate))
         self.score = text
         if message.mode == Mode.KIBITZ and not self._inside_main_menu():
-            DispatchDgt.fire(self._combine_depth_and_score())
+            text = self._combine_depth_and_score()
+            text.wait = True
+            DispatchDgt.fire(text)
 
     def _process_new_pv(self, message):
         self.hint_move = message.pv[0]
@@ -850,6 +852,11 @@ class DgtDisplay(DisplayMsg, Thread):
                 text.beep = self.dgttranslate.bl(BeepLevel.CONFIG)
                 text.maxtime = 0.5
                 DispatchDgt.fire(text)
+                if self.dgtmenu.get_mode() == Mode.PONDER:
+                    self._reset_moves_and_score()
+                    text.beep = False
+                    text.maxtime = 1
+                    self.score = text
 
         elif isinstance(message, Message.INTERACTION_MODE):
             if not self.dgtmenu.get_confirm() or not message.show_ok:

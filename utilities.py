@@ -35,7 +35,7 @@ from dgt.api import Dgt
 from configobj import ConfigObj, ConfigObjError, DuplicateError
 
 # picochess version
-version = '09m'
+version = '09n'
 
 evt_queue = queue.Queue()
 dispatch_queue = queue.Queue()
@@ -214,7 +214,7 @@ def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate)
         do_popen([git, 'remote', 'update'])
         # Check if update is needed - need to make sure, we get english answers
         output = do_popen([git, 'status', '-uno'], force_en_env=True)
-        if 'up-to-date' not in output:
+        if 'up-to-date' not in output and 'Your branch is ahead of' not in output:
             DispatchDgt.fire(dgttranslate.text('Y25_update'))
             # Update
             logging.debug('updating picochess')
@@ -227,7 +227,7 @@ def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate)
         else:
             logging.debug('no update available')
     else:
-        logging.debug('wrong branch %s', branch)
+        logging.warning('wrong branch %s', branch)
 
 
 def shutdown(dgtpi: bool, dev: str):
@@ -262,7 +262,7 @@ def get_location():
         int_ip = sock.getsockname()[0]
         sock.close()
 
-        response = urllib.request.urlopen('https://freegeoip.net/json/')
+        response = urllib.request.urlopen('http://will6.de/freegeoip')
         j = json.loads(response.read().decode())
         country_name = j['country_name'] + ' ' if 'country_name' in j else ''
         country_code = j['country_code'] + ' ' if 'country_code' in j else ''

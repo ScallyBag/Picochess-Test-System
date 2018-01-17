@@ -568,8 +568,6 @@ def main():
                         help="Time settings <FixSec> or <StMin IncSec> like '10'(move) or '5 0'(game) '3 2'(fischer). \
                         All values must be below 100")
     parser.add_argument('-norl', '--disable-revelation-leds', action='store_true', help='disable Revelation leds')
-    parser.add_argument('-rp', '--enable-revelation-pi', action='store_true',
-                        help='enable Revelation DGTPi clock emulation - needs >=3.25A firmware!')
     parser.add_argument('-l', '--log-level', choices=['notset', 'debug', 'info', 'warning', 'error', 'critical'],
                         default='warning', help='logging level')
     parser.add_argument('-lf', '--log-file', type=str, help='log to the given file')
@@ -636,8 +634,7 @@ def main():
     if unknown:
         logging.warning('invalid parameter given %s', unknown)
     # wire some dgt classes
-    dgtboard = DgtBoard(args.dgt_port, args.disable_revelation_leds, args.enable_revelation_pi, args.dgtpi,
-                        args.disable_et, args.slow_slide)
+    dgtboard = DgtBoard(args.dgt_port, args.disable_revelation_leds, args.dgtpi, args.disable_et, args.slow_slide)
     dgttranslate = DgtTranslate(args.beep_config, args.beep_some_level, args.language, version)
     dgtmenu = DgtMenu(args.disable_confirm_message, args.ponder_interval,
                       args.user_voice, args.computer_voice, args.speed_voice, args.enable_capital_letters,
@@ -1121,21 +1118,17 @@ def main():
 
             elif isinstance(event, Event.SHUTDOWN):
                 if uci_shell.get():
-                    with uci_shell.get():  # force to call __exit__ (close shell connection)
-                        pass
+                    uci_shell.get().__exit__(None, None, None)  # force to call __exit__ (close shell connection)
                 result = GameResult.ABORT
                 DisplayMsg.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
                 DisplayMsg.show(Message.SYSTEM_SHUTDOWN())
-                shutdown(args.dgtpi, dev=event.dev)
+                shutdown(args.dgtpi and uci_shell.get() is None, dev=event.dev)  # @todo make independant of remote eng
 
             elif isinstance(event, Event.REBOOT):
-                if uci_shell.get():
-                    with uci_shell.get():  # force to call __exit__ (close shell connection)
-                        pass
                 result = GameResult.ABORT
                 DisplayMsg.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
                 DisplayMsg.show(Message.SYSTEM_REBOOT())
-                reboot(args.dgtpi, dev=event.dev)
+                reboot(args.dgtpi and uci_shell.get() is None, dev=event.dev)  # @todo make independant of remote eng
 
             elif isinstance(event, Event.EMAIL_LOG):
                 email_logger = Emailer(email=args.email, mailgun_key=args.mailgun_key)

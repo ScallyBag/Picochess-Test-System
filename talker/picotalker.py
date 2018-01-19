@@ -150,7 +150,7 @@ class PicoTalkerDisplay(MsgDisplay, threading.Thread):
     def run(self):
         """Start listening for Messages on our queue and generate speech as appropriate."""
         previous_move = chess.Move.null()  # Ignore repeated broadcasts of a move
-        logging.info('msg_queue ready')
+        logging.info('msg_display ready')
         while True:
             try:
                 # Check if we have something to say

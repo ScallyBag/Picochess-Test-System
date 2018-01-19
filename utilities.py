@@ -37,8 +37,8 @@ from configobj import ConfigObj, ConfigObjError, DuplicateError
 # picochess version
 version = '09n'
 
-event_queue = queue.Queue()
-dispatch_queue = queue.Queue()
+evtobserver_queue = queue.Queue()
+dgtobserver_queue = queue.Queue()
 
 msgdisplay_devices = []
 dgtdisplay_devices = []
@@ -54,7 +54,7 @@ class EvtObserver(object):
     @staticmethod
     def fire(evt: Event):
         """Put an event on the Queue."""
-        event_queue.put(copy.deepcopy(evt))
+        evtobserver_queue.put(copy.deepcopy(evt))
 
 
 class DgtObserver(object):
@@ -67,7 +67,7 @@ class DgtObserver(object):
     @staticmethod
     def fire(dgt: Dgt):
         """Put an event on the Queue."""
-        dispatch_queue.put(copy.deepcopy(dgt))
+        dgtobserver_queue.put(copy.deepcopy(dgt))
 
 
 class MsgDisplay(object):

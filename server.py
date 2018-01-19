@@ -34,7 +34,6 @@ from web.picoweb import picoweb as pw
 from dgt.api import Event, Message
 from dgt.util import PlayMode, Mode, ClockSide
 from dgt.iface import DgtDisplayIface
-from dgt.translate import DgtTranslate
 from dgt.board import DgtBoard
 
 # This needs to be reworked to be session based (probably by token)
@@ -179,7 +178,7 @@ class WebServer(threading.Thread):
 
     def run(self):
         """Call by threading.Thread start() function."""
-        logging.info('evt_queue ready')
+        logging.info('evt_observer ready')
         IOLoop.instance().start()
 
 
@@ -420,7 +419,6 @@ class WebDisplay(MsgDisplay, threading.Thread):
         if 'ip_info' in self.shared:
             if 'location' in self.shared['ip_info']:
                 pgn_game.headers['Site'] = self.shared['ip_info']['location']
-
         pgn_game.headers['Time'] = self.starttime
 
     def task(self, message):
@@ -627,7 +625,7 @@ class WebDisplay(MsgDisplay, threading.Thread):
 
     def run(self):
         """Call by threading.Thread start() function."""
-        logging.info('msg_queue ready')
+        logging.info('msg_display ready')
         while True:
             # Check if we have something to display
             message = self.msg_queue.get()

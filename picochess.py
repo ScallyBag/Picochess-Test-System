@@ -37,7 +37,7 @@ import chess.uci
 
 from timecontrol import TimeControl
 from utilities import get_location, update_picochess, get_opening_books, shutdown, reboot, checkout_tag
-from utilities import EvtObserver, MsgDisplay, version, event_queue, write_picochess_ini, hms_time, RepeatedTimer
+from utilities import EvtObserver, MsgDisplay, version, evtobserver_queue, write_picochess_ini, hms_time, RepeatedTimer
 from pgn import Emailer, PgnDisplay
 from server import WebServer
 from talker.picotalker import PicoTalkerDisplay
@@ -761,10 +761,10 @@ def main():
     pb_move = chess.Move.null()  # safes the best ponder move so far (for permanent brain use)
 
     # Event loop
-    logging.info('evt_queue ready')
+    logging.info('evt_observer ready')
     while True:
         try:
-            event = event_queue.get()
+            event = evtobserver_queue.get()
         except queue.Empty:
             pass
         else:
@@ -1073,8 +1073,7 @@ def main():
                     write_picochess_ini('time', '{:d} {:d}'.format(tc_init['blitz'], tc_init['fischer']))
                 elif time_control.mode == TimeMode.FIXED:
                     write_picochess_ini('time', '{:d}'.format(tc_init['fixed']))
-                text = Message.TIME_CONTROL(time_text=event.time_text, show_ok=event.show_ok, tc_init=tc_init)
-                MsgDisplay.show(text)
+                MsgDisplay.show(Message.TIME_CONTROL(time_text=event.time_text, show_ok=event.show_ok, tc_init=tc_init))
                 stop_fen_timer()
 
             elif isinstance(event, Event.CLOCK_TIME):
@@ -1148,7 +1147,7 @@ def main():
             else:  # Default
                 logging.warning('event not handled : [%s]', event)
 
-            event_queue.task_done()
+            evtobserver_queue.task_done()
 
 
 if __name__ == '__main__':

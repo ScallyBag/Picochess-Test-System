@@ -866,7 +866,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
 
     def run(self):
         """Call by threading.Thread start() function."""
-        logging.info('msg_queue ready')
+        logging.info('msg_display ready')
         while True:
             # Check if we have something to display
             try:

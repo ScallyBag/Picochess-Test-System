@@ -20,7 +20,7 @@ import queue
 from threading import Timer, Thread, Lock
 from copy import deepcopy
 
-from utilities import DgtDisplay, DgtObserver, dispatch_queue
+from utilities import DgtDisplay, DgtObserver, dgtobserver_queue
 from dgt.api import Dgt, DgtApi
 from dgt.menu import DgtMenu
 
@@ -150,11 +150,14 @@ class Dispatcher(DgtObserver, Thread):
 
     def run(self):
         """Call by threading.Thread start() function."""
-        logging.info('dispatch_queue ready')
+        logging.info('dgt_observer ready')
         while True:
             # Check if we have something to display
             try:
-                msg = dispatch_queue.get()
+                msg = dgtobserver_queue.get()
+            except queue.Empty:
+                pass
+            else:
                 logging.debug('received command from dispatch_queue: %s devs: %s', msg, ','.join(msg.devs))
 
                 for dev in msg.devs & self.devices:
@@ -185,5 +188,5 @@ class Dispatcher(DgtObserver, Thread):
 
                     with self.process_lock[dev]:
                         self._process_message(message, dev)
-            except queue.Empty:
-                pass
+
+                # dgtobserver_queue.task_done()

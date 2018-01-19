@@ -167,7 +167,7 @@ class DgtDisplayIface(DgtDisplay, Thread):
 
     def run(self):
         """Call by threading.Thread start() function."""
-        logging.info('[%s] dgt_queue ready', self.get_name())
+        logging.info('[%s] dgt_display ready', self.get_name())
         while True:
             # Check if we have something to display
             try:

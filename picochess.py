@@ -899,11 +899,11 @@ def main():
                     done_move = pb_move = chess.Move.null()
                     time_control.reset()
                     searchmoves.reset()
-                    game_declared = False
                     set_wait_state(Message.START_NEW_GAME(game=game.copy(), newgame=newgame))
                 else:
                     logging.debug('no need to start a new game')
                     MsgDisplay.show(Message.START_NEW_GAME(game=game.copy(), newgame=newgame))
+                game_declared = False
 
             elif isinstance(event, Event.PAUSE_RESUME):
                 if engine.is_thinking():

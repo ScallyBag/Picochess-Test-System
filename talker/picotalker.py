@@ -27,7 +27,7 @@ from pathlib import Path
 from shutil import which
 
 import chess
-from utilities import DisplayMsg
+from utilities import MsgDisplay
 from timecontrol import TimeControl
 from dgt.api import Message
 from dgt.util import GameResult, PlayMode, Voice
@@ -83,7 +83,7 @@ class PicoTalker(object):
         return result
 
 
-class PicoTalkerDisplay(DisplayMsg, threading.Thread):
+class PicoTalkerDisplay(MsgDisplay, threading.Thread):
 
     """Listen on messages for talking."""
 

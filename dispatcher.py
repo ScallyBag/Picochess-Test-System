@@ -20,12 +20,12 @@ import queue
 from threading import Timer, Thread, Lock
 from copy import deepcopy
 
-from utilities import DisplayDgt, DispatchDgt, dispatch_queue
+from utilities import DgtDisplay, DgtObserver, dispatch_queue
 from dgt.api import Dgt, DgtApi
 from dgt.menu import DgtMenu
 
 
-class Dispatcher(DispatchDgt, Thread):
+class Dispatcher(DgtObserver, Thread):
 
     """A dispatcher taking the dispatch_queue and fill dgt_queue with the commands in time."""
 
@@ -77,7 +77,7 @@ class Dispatcher(DispatchDgt, Thread):
             logging.debug('processing delayed (%s) tasks: %s', dev, self.tasks[dev])
         else:
             logging.debug('(%s) max timer finished - returning to time display', dev)
-            DisplayDgt.show(Dgt.DISPLAY_TIME(force=False, wait=True, devs={dev}))
+            DgtDisplay.show(Dgt.DISPLAY_TIME(force=False, wait=True, devs={dev}))
         while self.tasks[dev]:
             logging.debug('(%s) tasks has %i members', dev, len(self.tasks[dev]))
             try:
@@ -136,7 +136,7 @@ class Dispatcher(DispatchDgt, Thread):
                 logging.debug('(%s) inside update menu => clock not started', dev)
                 return
             message.devs = {dev}  # on new system, we only have ONE device each message - force this!
-            DisplayDgt.show(message)
+            DgtDisplay.show(message)
         else:
             logging.debug('(%s) hash ignore DgtApi: %s', dev, message)
 

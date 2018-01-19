@@ -19,13 +19,12 @@ import logging
 from threading import Lock
 
 from utilities import hms_time
-from dgt.iface import DgtIface
-from dgt.util import ClockIcons, ClockSide, DgtClk, DgtCmd
-from dgt.translate import DgtTranslate
+from dgt.iface import DgtDisplayIface
+from dgt.util import ClockIcons, ClockSide
 from dgt.board import DgtBoard
 
 
-class DgtHw(DgtIface):
+class DgtHw(DgtDisplayIface):
 
     """Handle the DgtXL/3000 communication."""
 

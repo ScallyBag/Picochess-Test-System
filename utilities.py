@@ -30,86 +30,86 @@ from threading import Timer
 from subprocess import Popen, PIPE
 
 from dgt.translate import DgtTranslate
-from dgt.api import Dgt
+from dgt.api import Dgt, Event, Message
 
 from configobj import ConfigObj, ConfigObjError, DuplicateError
 
 # picochess version
 version = '09n'
 
-evt_queue = queue.Queue()
+event_queue = queue.Queue()
 dispatch_queue = queue.Queue()
 
 msgdisplay_devices = []
 dgtdisplay_devices = []
 
 
-class Observable(object):
+class EvtObserver(object):
 
     """Input devices are observable."""
 
     def __init__(self):
-        super(Observable, self).__init__()
+        super(EvtObserver, self).__init__()
 
     @staticmethod
-    def fire(event):
+    def fire(evt: Event):
         """Put an event on the Queue."""
-        evt_queue.put(copy.deepcopy(event))
+        event_queue.put(copy.deepcopy(evt))
 
 
-class DispatchDgt(object):
+class DgtObserver(object):
 
     """Input devices are observable."""
 
     def __init__(self):
-        super(DispatchDgt, self).__init__()
+        super(DgtObserver, self).__init__()
 
     @staticmethod
-    def fire(dgt):
+    def fire(dgt: Dgt):
         """Put an event on the Queue."""
         dispatch_queue.put(copy.deepcopy(dgt))
 
 
-class DisplayMsg(object):
+class MsgDisplay(object):
 
     """Display devices (DGT XL clock, Piface LCD, pgn file...)."""
 
     def __init__(self):
-        super(DisplayMsg, self).__init__()
+        super(MsgDisplay, self).__init__()
         self.msg_queue = queue.Queue()
         msgdisplay_devices.append(self)
 
     @staticmethod
-    def show(message):
+    def show(msg: Message):
         """Send a message on each display device."""
         for display in msgdisplay_devices:
-            display.msg_queue.put(copy.deepcopy(message))
+            display.msg_queue.put(copy.deepcopy(msg))
 
 
-class DisplayDgt(object):
+class DgtDisplay(object):
 
     """Display devices (DGT XL clock, Piface LCD, pgn file...)."""
 
     def __init__(self):
-        super(DisplayDgt, self).__init__()
+        super(DgtDisplay, self).__init__()
         self.dgt_queue = queue.Queue()
         dgtdisplay_devices.append(self)
 
     @staticmethod
-    def show(message):
+    def show(dgt: Dgt):
         """Send a message on each display device."""
         for display in dgtdisplay_devices:
-            display.dgt_queue.put(copy.deepcopy(message))
+            display.dgt_queue.put(copy.deepcopy(dgt))
 
 
 class RepeatedTimer(object):
 
     """Call function on a given interval."""
 
-    def __init__(self, interval, function, *args, **kwargs):
+    def __init__(self, interval, funct, *args, **kwargs):
         self._timer = None
         self.interval = interval
-        self.function = function
+        self.function = funct
         self.args = args
         self.kwargs = kwargs
         self.timer_running = False
@@ -194,7 +194,7 @@ def get_tags():
     """Get the last 3 tags from git."""
     git = git_name()
     tags = [(tags, tags[1] + tags[-2:]) for tags in do_popen([git, 'tag'], log=False).split('\n')[-4:-1]]
-    return tags  # returns something like [('v0.9j', 09j'), ('v0.9k', '09k'), ('v0.9l', '09l')]
+    return tags  # returns something like [('v0.9l', 09l'), ('v0.9m', '09m'), ('v0.9n', '09n')]
 
 
 def checkout_tag(tag):
@@ -215,7 +215,7 @@ def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate)
         # Check if update is needed - need to make sure, we get english answers
         output = do_popen([git, 'status', '-uno'], force_en_env=True)
         if 'up-to-date' not in output and 'Your branch is ahead of' not in output:
-            DispatchDgt.fire(dgttranslate.text('Y25_update'))
+            DgtObserver.fire(dgttranslate.text('Y25_update'))
             # Update
             logging.debug('updating picochess')
             do_popen([git, 'pull', 'origin', branch])

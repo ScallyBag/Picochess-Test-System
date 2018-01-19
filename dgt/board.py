@@ -26,7 +26,7 @@ import time
 
 from dgt.util import DgtAck, DgtClk, DgtCmd, DgtMsg, ClockIcons, ClockSide, enum
 from dgt.api import Message, Dgt
-from utilities import RepeatedTimer, DisplayMsg, hms_time
+from utilities import RepeatedTimer, MsgDisplay, hms_time
 
 
 class DgtBoard(object):
@@ -192,7 +192,7 @@ class DgtBoard(object):
                 self.ask_battery_status()
             self.bconn_text = Dgt.DISPLAY_TEXT(l=text_l, m=text_m, s=text_s, wait=True, beep=False, maxtime=1.1,
                                                devs={'i2c', 'web'})  # serial clock lateron
-            DisplayMsg.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel))
+            MsgDisplay.show(Message.DGT_EBOARD_VERSION(text=self.bconn_text, channel=self.channel))
             self.startup_serial_clock()  # now ask the serial clock to answer
             if self.watchdog_timer.is_running():
                 logging.warning('watchdog timer is already running')
@@ -235,23 +235,23 @@ class DgtBoard(object):
                     #                         73-53 | button 3 + 4
                     if ack3 == 49:
                         logging.info('(ser) clock button 0 pressed - ack2: %i', ack2)
-                        DisplayMsg.show(Message.DGT_BUTTON(button=0, dev='ser'))
+                        MsgDisplay.show(Message.DGT_BUTTON(button=0, dev='ser'))
                     if ack3 == 52:
                         logging.info('(ser) clock button 1 pressed - ack2: %i', ack2)
-                        DisplayMsg.show(Message.DGT_BUTTON(button=1, dev='ser'))
+                        MsgDisplay.show(Message.DGT_BUTTON(button=1, dev='ser'))
                     if ack3 == 51:
                         logging.info('(ser) clock button 2 pressed - ack2: %i', ack2)
-                        DisplayMsg.show(Message.DGT_BUTTON(button=2, dev='ser'))
+                        MsgDisplay.show(Message.DGT_BUTTON(button=2, dev='ser'))
                     if ack3 == 50:
                         logging.info('(ser) clock button 3 pressed - ack2: %i', ack2)
-                        DisplayMsg.show(Message.DGT_BUTTON(button=3, dev='ser'))
+                        MsgDisplay.show(Message.DGT_BUTTON(button=3, dev='ser'))
                     if ack3 == 53:
                         if ack2 == 69:
                             logging.info('(ser) clock button 0+4 pressed - ack2: %i', ack2)
-                            DisplayMsg.show(Message.DGT_BUTTON(button=0x11, dev='ser'))
+                            MsgDisplay.show(Message.DGT_BUTTON(button=0x11, dev='ser'))
                         else:
                             logging.info('(ser) clock button 4 pressed - ack2: %i', ack2)
-                            DisplayMsg.show(Message.DGT_BUTTON(button=4, dev='ser'))
+                            MsgDisplay.show(Message.DGT_BUTTON(button=4, dev='ser'))
                 if ack1 == DgtAck.DGT_ACK_CLOCK_VERSION.value:
                     self.enable_ser_clock = True
                     main = ack2 >> 4
@@ -262,7 +262,7 @@ class DgtBoard(object):
                         dev = 'ser'
                     else:
                         dev = 'err'
-                    DisplayMsg.show(Message.DGT_CLOCK_VERSION(main=main, sub=sub, dev=dev, text=self.bconn_text))
+                    MsgDisplay.show(Message.DGT_CLOCK_VERSION(main=main, sub=sub, dev=dev, text=self.bconn_text))
             elif any(message[:7]):
                 r_hours = message[0] & 0x0f
                 r_mins = (message[1] >> 4) * 10 + (message[1] & 0x0f)
@@ -293,7 +293,7 @@ class DgtBoard(object):
                         if self.lever_pos != right_side_down:
                             logging.debug('(ser) clock button status: 0x%x old lever: %s', status, self.lever_pos)
                             if self.lever_pos is not None:
-                                DisplayMsg.show(Message.DGT_BUTTON(button=right_side_down, dev='ser'))
+                                MsgDisplay.show(Message.DGT_BUTTON(button=right_side_down, dev='ser'))
                             self.lever_pos = right_side_down
                     else:
                         logging.info('(ser) clock not connected, sending old time l:%s r:%s',
@@ -305,7 +305,7 @@ class DgtBoard(object):
                                      hms_time(self.l_time), hms_time(self.r_time))
                         l_time = self.l_time
                         r_time = self.r_time
-                    DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=l_time, time_right=r_time, connect=connect,
+                    MsgDisplay.show(Message.DGT_CLOCK_TIME(time_left=l_time, time_right=r_time, connect=connect,
                                                            dev='ser'))
                     if not self.enable_ser_clock:
                         dev = 'rev' if 'REVII' in self.bt_name else 'ser'
@@ -355,7 +355,7 @@ class DgtBoard(object):
 
             # Attention! This fen is NOT flipped
             logging.debug('raw fen [%s]', fen)
-            DisplayMsg.show(Message.DGT_FEN(fen=fen, raw=True))
+            MsgDisplay.show(Message.DGT_FEN(fen=fen, raw=True))
 
         elif message_id == DgtMsg.DGT_MSG_FIELD_UPDATE:
             if message_length != 2:
@@ -367,7 +367,7 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_SERIALNR:
             if message_length != 5:
                 logging.warning('illegal length in data')
-            DisplayMsg.show(Message.DGT_SERIAL_NR(number=''.join([chr(elem) for elem in message])))
+            MsgDisplay.show(Message.DGT_SERIAL_NR(number=''.join([chr(elem) for elem in message])))
 
         elif message_id == DgtMsg.DGT_MSG_LONG_SERIALNR:
             if message_length != 10:
@@ -379,7 +379,7 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_BATTERY_STATUS:
             if message_length != 9:
                 logging.warning('illegal length in data')
-            DisplayMsg.show(Message.BATTERY(percent=message[0]))
+            MsgDisplay.show(Message.BATTERY(percent=message[0]))
 
         else:  # Default
             logging.warning('message not handled [%s]', DgtMsg(message_id))
@@ -681,7 +681,7 @@ class DgtBoard(object):
         bwait = 'Board' + waitchars[self.wait_counter]
         text = Dgt.DISPLAY_TEXT(l='no e-' + bwait, m='no' + bwait, s=bwait, wait=True, beep=False, maxtime=0.1,
                                 devs={'i2c', 'web'})
-        DisplayMsg.show(Message.DGT_NO_EBOARD_ERROR(text=text))
+        MsgDisplay.show(Message.DGT_NO_EBOARD_ERROR(text=text))
         self.wait_counter = (self.wait_counter + 1) % len(waitchars)
         return False
 

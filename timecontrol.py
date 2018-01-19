@@ -21,7 +21,7 @@ import logging
 import copy
 from math import floor
 
-from utilities import Observable, hms_time
+from utilities import EvtObserver, hms_time
 import chess
 from dgt.api import Event
 from dgt.util import TimeMode
@@ -122,7 +122,7 @@ class TimeControl(object):
             display_color = 'WHITE' if self.active_color == chess.WHITE else 'BLACK'
             txt = 'current clock time (before subtracting) is %f and color is %s, out of time event started from %f'
             logging.debug(txt, self.internal_time[self.active_color], display_color, time_start)
-            Observable.fire(Event.OUT_OF_TIME(color=self.active_color))
+            EvtObserver.fire(Event.OUT_OF_TIME(color=self.active_color))
 
     def add_time(self, color):
         """Add the increment value to the color given."""

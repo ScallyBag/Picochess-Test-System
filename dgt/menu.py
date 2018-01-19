@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 import chess
 from timecontrol import TimeControl
-from utilities import Observable, DispatchDgt, get_tags, version, write_picochess_ini
+from utilities import EvtObserver, DgtObserver, get_tags, version, write_picochess_ini
 from dgt.util import TimeMode, TimeModeLoop, Top, TopLoop, Mode, ModeLoop, Language, LanguageLoop, BeepLevel, BeepLoop
 from dgt.util import System, SystemLoop, Display, DisplayLoop, ClockIcons, Voice, VoiceLoop, Info, InfoLoop
 from dgt.api import Dgt, Event
@@ -704,11 +704,11 @@ class DgtMenu(object):
         return text
 
     def _fire_event(self, event: Event):
-        Observable.fire(event)
+        EvtObserver.fire(event)
         return self.save_choices()
 
     def _fire_dispatchdgt(self, text):
-        DispatchDgt.fire(text)
+        DgtObserver.fire(text)
         return self.save_choices()
 
     def _fire_timectrl(self, timectrl: TimeControl):
@@ -910,7 +910,7 @@ class DgtMenu(object):
             if self.menu_mode == Mode.REMOTE and not self.inside_room:
                 text = self.dgttranslate.text('Y10_errorroom')
             elif self.menu_mode == Mode.BRAIN and not self.get_engine_has_ponder():
-                DispatchDgt.fire(self.dgttranslate.text('Y10_erroreng'))
+                DgtObserver.fire(self.dgttranslate.text('Y10_erroreng'))
                 text = Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'})
             else:
                 mode_text = self.dgttranslate.text('B10_okmode')
@@ -942,12 +942,12 @@ class DgtMenu(object):
             if bit_board.is_valid():
                 self.flip_board = self.menu_position_reverse
                 event = Event.SETUP_POSITION(fen=bit_board.fen(), uci960=self.menu_position_uci960)
-                Observable.fire(event)
+                EvtObserver.fire(event)
                 # self._reset_moves_and_score() done in "START_NEW_GAME"
                 text = self.save_choices()
             else:
                 logging.debug('illegal fen %s', fen)
-                DispatchDgt.fire(self.dgttranslate.text('Y10_illegalpos'))
+                DgtObserver.fire(self.dgttranslate.text('Y10_illegalpos'))
                 text = self.dgttranslate.text('B00_scanboard')
                 text.wait = True
 
@@ -1001,7 +1001,7 @@ class DgtMenu(object):
                 eng = self.installed_engines[self.menu_engine_name]
                 eng_text = self.dgttranslate.text('B10_okengine')
                 event = Event.NEW_ENGINE(eng=eng, eng_text=eng_text, options={}, show_ok=True)
-                Observable.fire(event)
+                EvtObserver.fire(event)
                 self.engine_restart = True
 
         elif self.state == MenuState.ENG_NAME_LEVEL:
@@ -1014,7 +1014,7 @@ class DgtMenu(object):
                 if not self.remote_engine:
                     write_picochess_ini('engine-level', msg)
                 event = Event.LEVEL(options={}, level_text=self.dgttranslate.text('B10_level', msg), level_name=msg)
-                Observable.fire(event)
+                EvtObserver.fire(event)
             else:
                 options = {}
             eng_text = self.dgttranslate.text('B10_okengine')
@@ -1058,7 +1058,7 @@ class DgtMenu(object):
                 text = self.dgttranslate.text('B07_default', msg)
                 if len(msg) == 7:  # delete the " " for XL incase its "123 456"
                     text.s = msg[:3] + msg[4:]
-                DispatchDgt.fire(text)
+                DgtObserver.fire(text)
                 msg = ' '.join(self.int_ip.split('.')[2:])
                 text = self.dgttranslate.text('N07_default', msg)
                 if len(msg) == 7:  # delete the " " for XL incase its "123 456"
@@ -1096,7 +1096,7 @@ class DgtMenu(object):
         elif self.state == MenuState.SYS_LOG:
             # do action!
             if self.log_file:
-                Observable.fire(Event.EMAIL_LOG())
+                EvtObserver.fire(Event.EMAIL_LOG())
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklogfile'))
             else:
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_nofunction'))
@@ -1127,7 +1127,7 @@ class DgtMenu(object):
                     del config['user-voice']
                     config.write()
                 event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
-                Observable.fire(event)
+                EvtObserver.fire(event)
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
         elif self.state == MenuState.SYS_VOICE_USER_MUTE_LANG:
@@ -1143,7 +1143,7 @@ class DgtMenu(object):
             config.write()
             event = Event.SET_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.menu_system_voice_speedfactor)
-            Observable.fire(event)
+            EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
         elif self.state == MenuState.SYS_VOICE_COMP_MUTE:
@@ -1156,7 +1156,7 @@ class DgtMenu(object):
                     del config['computer-voice']
                     config.write()
                 event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
-                Observable.fire(event)
+                EvtObserver.fire(event)
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
         elif self.state == MenuState.SYS_VOICE_COMP_MUTE_LANG:
@@ -1172,7 +1172,7 @@ class DgtMenu(object):
             config.write()
             event = Event.SET_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.menu_system_voice_speedfactor)
-            Observable.fire(event)
+            EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
         elif self.state == MenuState.SYS_VOICE_SPEED:
@@ -1185,7 +1185,7 @@ class DgtMenu(object):
             write_picochess_ini('speed-voice', self.menu_system_voice_speedfactor)
             event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute',  # lang & speaker ignored
                                     speed=self.menu_system_voice_speedfactor)
-            Observable.fire(event)
+            EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okspeed'))
 
         elif self.state == MenuState.SYS_DISP:

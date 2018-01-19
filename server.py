@@ -28,12 +28,12 @@ import tornado.wsgi
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
-from utilities import Observable, DisplayMsg, hms_time, RepeatedTimer
+from utilities import EvtObserver, MsgDisplay, hms_time, RepeatedTimer
 from web.picoweb import picoweb as pw
 
 from dgt.api import Event, Message
 from dgt.util import PlayMode, Mode, ClockSide
-from dgt.iface import DgtIface
+from dgt.iface import DgtDisplayIface
 from dgt.translate import DgtTranslate
 from dgt.board import DgtBoard
 
@@ -63,16 +63,16 @@ class ChannelHandler(ServerRequestHandler):
                 fen = fen.split(' ')[0]
                 bit_board = chess.Board()  # valid the fen
                 bit_board.set_board_fen(fen)
-                Observable.fire(Event.KEYBOARD_FEN(fen=fen))
+                EvtObserver.fire(Event.KEYBOARD_FEN(fen=fen))
             # end simulation code
             elif cmd.startswith('go'):
                 if 'last_dgt_move_msg' in self.shared:
                     fen = self.shared['last_dgt_move_msg']['fen'].split(' ')[0]
-                    Observable.fire(Event.KEYBOARD_FEN(fen=fen))
+                    EvtObserver.fire(Event.KEYBOARD_FEN(fen=fen))
             else:
                 # Event.KEYBOARD_MOVE tranfers "move" to "fen" and then continues with "Message.DGT_FEN"
                 move = chess.Move.from_uci(cmd)
-                Observable.fire(Event.KEYBOARD_MOVE(move=move))
+                EvtObserver.fire(Event.KEYBOARD_MOVE(move=move))
         except (ValueError, IndexError):
             logging.warning('Invalid user input [%s]', raw)
 
@@ -86,12 +86,12 @@ class ChannelHandler(ServerRequestHandler):
             EventHandler.write_to_clients(result)
         elif action == 'move':
             move = chess.Move.from_uci(self.get_argument('source') + self.get_argument('target'))
-            Observable.fire(Event.REMOTE_MOVE(move=move, fen=self.get_argument('fen')))
+            EvtObserver.fire(Event.REMOTE_MOVE(move=move, fen=self.get_argument('fen')))
         elif action == 'clockbutton':
-            Observable.fire(Event.KEYBOARD_BUTTON(button=self.get_argument('button'), dev='web'))
+            EvtObserver.fire(Event.KEYBOARD_BUTTON(button=self.get_argument('button'), dev='web'))
         elif action == 'room':
             inside = self.get_argument('room') == 'inside'
-            Observable.fire(Event.REMOTE_ROOM(inside=inside))
+            EvtObserver.fire(Event.REMOTE_ROOM(inside=inside))
         elif action == 'command':
             self.process_console_command(self.get_argument('command'))
 
@@ -183,7 +183,7 @@ class WebServer(threading.Thread):
         IOLoop.instance().start()
 
 
-class WebVr(DgtIface):
+class WebVr(DgtDisplayIface):
 
     """Handle the web (clock) communication."""
 
@@ -193,7 +193,7 @@ class WebVr(DgtIface):
         self.virtual_timer = None
         self.enable_dgtpi = dgtboard.is_pi
         sub = 2 if dgtboard.is_pi else 0
-        DisplayMsg.show(Message.DGT_CLOCK_VERSION(main=2, sub=sub, dev='web', text=None))
+        MsgDisplay.show(Message.DGT_CLOCK_VERSION(main=2, sub=sub, dev='web', text=None))
         self.clock_show_time = True
 
         # keep the last time to find out errorous DGT_MSG_BWTIME messages (error: current time > last time)
@@ -220,7 +220,7 @@ class WebVr(DgtIface):
                 time_right = 0
             self.r_time = time_right
         logging.info('(web) clock new time received l:%s r:%s', hms_time(self.l_time), hms_time(self.r_time))
-        DisplayMsg.show(Message.DGT_CLOCK_TIME(time_left=self.l_time, time_right=self.r_time, connect=True, dev='web'))
+        MsgDisplay.show(Message.DGT_CLOCK_TIME(time_left=self.l_time, time_right=self.r_time, connect=True, dev='web'))
         self._display_time(self.l_time, self.r_time)
 
     def _display_time(self, time_left: int, time_right: int):
@@ -354,7 +354,7 @@ class WebVr(DgtIface):
         IOLoop.instance().add_callback(callback=lambda: self._process_message(msg))
 
 
-class WebDisplay(DisplayMsg, threading.Thread):
+class WebDisplay(MsgDisplay, threading.Thread):
     def __init__(self, shared):
         super(WebDisplay, self).__init__()
         self.shared = shared

@@ -23,7 +23,7 @@ import paramiko
 
 from subprocess import DEVNULL
 from dgt.api import Event
-from utilities import Observable
+from utilities import EvtObserver
 import chess.uci
 from chess import Board
 from uci.informer import Informer
@@ -211,7 +211,7 @@ class UciEngine(object):
         logging.info('res: %s', self.res)
         # Observable.fire(Event.STOP_SEARCH())
         if self.show_best and self.res:
-            Observable.fire(Event.BEST_MOVE(move=self.res.bestmove, ponder=self.res.ponder, inbook=False))
+            EvtObserver.fire(Event.BEST_MOVE(move=self.res.bestmove, ponder=self.res.ponder, inbook=False))
         else:
             logging.info('event best_move not fired')
 
@@ -225,7 +225,7 @@ class UciEngine(object):
         logging.info('res: %s', self.res)
         # Observable.fire(Event.STOP_SEARCH())
         if self.show_best and self.res:
-            Observable.fire(Event.BEST_MOVE(move=self.res.bestmove, ponder=self.res.ponder, inbook=False))
+            EvtObserver.fire(Event.BEST_MOVE(move=self.res.bestmove, ponder=self.res.ponder, inbook=False))
         else:
             logging.info('event best_move not fired')
 

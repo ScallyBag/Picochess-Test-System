@@ -17,7 +17,7 @@
 
 from threading import Timer
 
-from utilities import Observable
+from utilities import EvtObserver
 from dgt.api import Event
 import chess.uci
 
@@ -37,11 +37,11 @@ class Informer(chess.uci.InfoHandler):
         self.allow_score = True
         self.allow_pv = True
         self.allow_depth = True
-        Observable.fire(Event.START_SEARCH())
+        EvtObserver.fire(Event.START_SEARCH())
         super().on_go()
 
     def on_bestmove(self, bestmove, ponder):
-        Observable.fire(Event.STOP_SEARCH())
+        EvtObserver.fire(Event.STOP_SEARCH())
         super().on_bestmove(bestmove, ponder)
 
     def _reset_allow_score(self):
@@ -80,17 +80,17 @@ class Informer(chess.uci.InfoHandler):
     def score(self, cp, mate, lowerbound, upperbound):
         """Engine sends SCORE."""
         if self._allow_fire_score():
-            Observable.fire(Event.NEW_SCORE(score=cp, mate=mate))
+            EvtObserver.fire(Event.NEW_SCORE(score=cp, mate=mate))
         super().score(cp, mate, lowerbound, upperbound)
 
     def pv(self, moves):
         """Call when engine sends PV."""
         if self._allow_fire_pv() and moves:
-            Observable.fire(Event.NEW_PV(pv=moves))
+            EvtObserver.fire(Event.NEW_PV(pv=moves))
         super().pv(moves)
 
     def depth(self, dep):
         """Engine sends DEPTH."""
         if self._allow_fire_depth():
-            Observable.fire(Event.NEW_DEPTH(depth=dep))
+            EvtObserver.fire(Event.NEW_DEPTH(depth=dep))
         super().depth(dep)

@@ -32,7 +32,7 @@ import requests
 
 import chess
 import chess.pgn
-from utilities import DisplayMsg
+from utilities import MsgDisplay
 from dgt.api import Message
 from dgt.util import GameResult, PlayMode, Mode
 
@@ -143,7 +143,7 @@ class Emailer(object):
                 self._use_smtp(subject=subject, body=body, path=path)
 
 
-class PgnDisplay(DisplayMsg, threading.Thread):
+class PgnDisplay(MsgDisplay, threading.Thread):
 
     """Deal with DisplayMessages related to pgn."""
 

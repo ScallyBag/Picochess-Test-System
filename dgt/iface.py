@@ -20,19 +20,18 @@ import queue
 from threading import Thread
 
 from chess import Board
-from utilities import hms_time, DisplayDgt, DispatchDgt
-from dgt.util import ClockIcons, ClockSide
+from utilities import DgtDisplay
+from dgt.util import ClockSide
 from dgt.api import Dgt
-from dgt.translate import DgtTranslate
 from dgt.board import DgtBoard
 
 
-class DgtIface(DisplayDgt, Thread):
+class DgtDisplayIface(DgtDisplay, Thread):
 
     """An Interface class for DgtHw, DgtPi, DgtVr."""
 
     def __init__(self, dgtboard: DgtBoard):
-        super(DgtIface, self).__init__()
+        super(DgtDisplayIface, self).__init__()
 
         self.dgtboard = dgtboard
 

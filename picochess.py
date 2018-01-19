@@ -690,7 +690,7 @@ def main():
                          key_file=args.engine_remote_key, password=args.engine_remote_pass)
     while engine_tries < 2:
         if engine_file is None:
-            eng_ini = read_engine_ini(uci_shell.get(), engine_home)
+            eng_ini = read_engine_ini(uci_shell.get_spur(), engine_home)
             engine_file = eng_ini[engine_tries]['file']
             engine_tries += 1
         engine_file = os.path.basename(engine_file)
@@ -1104,18 +1104,18 @@ def main():
                 DisplayMsg.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
 
             elif isinstance(event, Event.SHUTDOWN):
-                if uci_shell.get():
-                    uci_shell.get().__exit__(None, None, None)  # force to call __exit__ (close shell connection)
+                if uci_shell.get_spur():
+                    uci_shell.get_spur().__exit__(None, None, None)  # force to call __exit__ (close shell connection)
                 result = GameResult.ABORT
                 DisplayMsg.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
                 DisplayMsg.show(Message.SYSTEM_SHUTDOWN())
-                shutdown(args.dgtpi and uci_shell.get() is None, dev=event.dev)  # @todo make independant of remote eng
+                shutdown(args.dgtpi and uci_shell.get_spur() is None, dev=event.dev)  # @todo make independant of remote
 
             elif isinstance(event, Event.REBOOT):
                 result = GameResult.ABORT
                 DisplayMsg.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
                 DisplayMsg.show(Message.SYSTEM_REBOOT())
-                reboot(args.dgtpi and uci_shell.get() is None, dev=event.dev)  # @todo make independant of remote eng
+                reboot(args.dgtpi and uci_shell.get_spur() is None, dev=event.dev)  # @todo make independant of remote
 
             elif isinstance(event, Event.EMAIL_LOG):
                 email_logger = Emailer(email=args.email, mailgun_key=args.mailgun_key)

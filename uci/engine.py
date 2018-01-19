@@ -47,7 +47,7 @@ class UciShell(object):
         else:
             self.shell = None
 
-    def get(self):
+    def get_spur(self):
         return self.shell
 
 
@@ -58,7 +58,7 @@ class UciEngine(object):
     def __init__(self, file: str, uci_shell: UciShell,  home=''):
         super(UciEngine, self).__init__()
         try:
-            self.shell = uci_shell.get()
+            self.shell = uci_shell.get_spur()
             if home:
                 file = home + os.sep + file
             if self.shell:

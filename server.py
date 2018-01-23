@@ -459,7 +459,7 @@ class WebDisplay(MsgDisplay, threading.Thread):
 
         if False:  # switch-case
             pass
-        elif isinstance(message, Message.START_NEW_GAME):
+        elif isinstance(message, Message.NEW_GAME):
             self.starttime = datetime.datetime.now().strftime('%H:%M:%S')
             pgn_str = _transfer(message.game)
             fen = message.game.fen()
@@ -514,7 +514,7 @@ class WebDisplay(MsgDisplay, threading.Thread):
             if message.info['level_name'] is None:
                 del self.shared['game_info']['level_name']
 
-        elif isinstance(message, Message.OPENING_BOOK):
+        elif isinstance(message, Message.NEW_BOOK):
             self._create_game_info()
             self.shared['game_info']['book_text'] = message.book_text
 
@@ -539,14 +539,14 @@ class WebDisplay(MsgDisplay, threading.Thread):
             self.shared['game_info']['time_text'] = message.time_text
             self.shared['game_info']['tc_init'] = message.tc_init
 
-        elif isinstance(message, Message.LEVEL):
+        elif isinstance(message, Message.NEW_LEVEL):
             self._create_game_info()
             self.shared['game_info']['level_text'] = message.level_text
             self.shared['game_info']['level_name'] = message.level_name
             _build_headers()
             _send_headers()
 
-        elif isinstance(message, Message.DGT_NO_CLOCK_ERROR):
+        elif isinstance(message, Message.DGT_CLOCK_ERROR):
             # result = {'event': 'Status', 'msg': 'Error clock'}
             # EventHandler.write_to_clients(result)
             pass

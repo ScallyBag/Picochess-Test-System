@@ -771,7 +771,7 @@ def main():
             logging.debug('received event from evt_queue: %s', event)
             if False:  # switch-case
                 pass
-            elif isinstance(event, Event.FEN):
+            elif isinstance(event, Event.NEW_FEN):
                 process_fen(event.fen)
 
             elif isinstance(event, Event.KEYBOARD_MOVE):
@@ -785,11 +785,11 @@ def main():
                     fen = game_copy.board_fen()
                     MsgDisplay.show(Message.DGT_FEN(fen=fen, raw=False))
 
-            elif isinstance(event, Event.LEVEL):
+            elif isinstance(event, Event.NEW_LEVEL):
                 if event.options:
                     engine.startup(event.options, False)
-                MsgDisplay.show(Message.LEVEL(level_text=event.level_text, level_name=event.level_name,
-                                              do_speak=bool(event.options)))
+                MsgDisplay.show(Message.NEW_LEVEL(level_text=event.level_text, level_name=event.level_name,
+                                                  do_speak=bool(event.options)))
                 stop_fen_timer()
 
             elif isinstance(event, Event.NEW_ENGINE):
@@ -874,7 +874,7 @@ def main():
                 time_control.reset()
                 searchmoves.reset()
                 game_declared = False
-                set_wait_state(Message.START_NEW_GAME(game=game.copy(), newgame=True))
+                set_wait_state(Message.NEW_GAME(game=game.copy(), newgame=True))
 
             elif isinstance(event, Event.NEW_GAME):
                 newgame = game.move_stack or (game.chess960_pos() != event.pos960)
@@ -899,10 +899,10 @@ def main():
                     done_move = pb_move = chess.Move.null()
                     time_control.reset()
                     searchmoves.reset()
-                    set_wait_state(Message.START_NEW_GAME(game=game.copy(), newgame=newgame))
+                    set_wait_state(Message.NEW_GAME(game=game.copy(), newgame=newgame))
                 else:
                     logging.debug('no need to start a new game')
-                    MsgDisplay.show(Message.START_NEW_GAME(game=game.copy(), newgame=newgame))
+                    MsgDisplay.show(Message.NEW_GAME(game=game.copy(), newgame=newgame))
                 game_declared = False
 
             elif isinstance(event, Event.PAUSE_RESUME):
@@ -970,7 +970,7 @@ def main():
                     if best_move_displayed:
                         MsgDisplay.show(Message.SWITCH_SIDES(game=game.copy(), move=move))
 
-            elif isinstance(event, Event.DRAWRESIGN):
+            elif isinstance(event, Event.DRAW_RESIGN):
                 if not game_declared:  # in case user leaves kings in place while moving other pieces
                     stop_search_and_clock()
                     MsgDisplay.show(Message.GAME_ENDS(result=event.result, play_mode=play_mode, game=game.copy()))
@@ -1042,7 +1042,7 @@ def main():
             elif isinstance(event, Event.STOP_SEARCH):
                 MsgDisplay.show(Message.SEARCH_STOPPED())
 
-            elif isinstance(event, Event.SET_INTERACTION_MODE):
+            elif isinstance(event, Event.INTERACTION_MODE):
                 if event.mode not in (Mode.NORMAL, Mode.REMOTE) and done_computer_fen:  # @todo check why still needed
                     dgtmenu.set_mode(interaction_mode)  # undo the button4 stuff
                     logging.warning('mode cant be changed to a pondering mode as long as a move is displayed')
@@ -1056,14 +1056,14 @@ def main():
                     msg = Message.INTERACTION_MODE(mode=event.mode, mode_text=event.mode_text, show_ok=event.show_ok)
                     set_wait_state(msg)  # dont clear searchmoves here
 
-            elif isinstance(event, Event.SET_OPENING_BOOK):
+            elif isinstance(event, Event.NEW_BOOK):
                 write_picochess_ini('book', event.book['file'])
                 logging.debug('changing opening book [%s]', event.book['file'])
                 bookreader = chess.polyglot.open_reader(event.book['file'])
-                MsgDisplay.show(Message.OPENING_BOOK(book_text=event.book_text, show_ok=event.show_ok))
+                MsgDisplay.show(Message.NEW_BOOK(book_text=event.book_text, show_ok=event.show_ok))
                 stop_fen_timer()
 
-            elif isinstance(event, Event.SET_TIME_CONTROL):
+            elif isinstance(event, Event.TIME_CONTROL):
                 time_control.stop_internal(log=False)
                 tc_init = event.tc_init
                 time_control = TimeControl(**tc_init)
@@ -1097,12 +1097,12 @@ def main():
                 else:
                     logging.debug('ignore clock time - too low prio: %s', event.dev)
 
-            elif isinstance(event, Event.OUT_OF_TIME):
+            elif isinstance(event, Event.CLOCK_FLAG):
                 stop_search_and_clock()
-                result = GameResult.OUT_OF_TIME
+                result = GameResult.FLAG_TIME
                 MsgDisplay.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
 
-            elif isinstance(event, Event.SHUTDOWN):
+            elif isinstance(event, Event.SYSTEM_SHUTDOWN):
                 if uci_shell.get_spur():
                     uci_shell.get_spur().__exit__(None, None, None)  # force to call __exit__ (close shell connection)
                 result = GameResult.ABORT
@@ -1110,7 +1110,7 @@ def main():
                 MsgDisplay.show(Message.SYSTEM_SHUTDOWN())
                 shutdown(args.dgtpi and uci_shell.get_spur() is None, dev=event.dev)  # @todo make independant of remote
 
-            elif isinstance(event, Event.REBOOT):
+            elif isinstance(event, Event.SYSTEM_REBOOT):
                 result = GameResult.ABORT
                 MsgDisplay.show(Message.GAME_ENDS(result=result, play_mode=play_mode, game=game.copy()))
                 MsgDisplay.show(Message.SYSTEM_REBOOT())
@@ -1123,8 +1123,8 @@ def main():
                 body = 'You probably want to forward this file to a picochess developer ;-)'
                 email_logger.send('Picochess LOG', body, '/opt/picochess/logs/{}'.format(args.log_file))
 
-            elif isinstance(event, Event.SET_VOICE):
-                MsgDisplay.show(Message.SET_VOICE(type=event.type, lang=event.lang, speaker=event.speaker,
+            elif isinstance(event, Event.NEW_VOICE):
+                MsgDisplay.show(Message.NEW_VOICE(type=event.type, lang=event.lang, speaker=event.speaker,
                                                   speed=event.speed))
 
             elif isinstance(event, Event.KEYBOARD_BUTTON):

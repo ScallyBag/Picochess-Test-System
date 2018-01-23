@@ -379,7 +379,7 @@ class DgtBoard(object):
         elif message_id == DgtMsg.DGT_MSG_BATTERY_STATUS:
             if message_length != 9:
                 logging.warning('illegal length in data')
-            MsgDisplay.show(Message.BATTERY(percent=message[0]))
+            MsgDisplay.show(Message.BATTERY_BT(percent=message[0]))
 
         else:  # Default
             logging.warning('message not handled [%s]', DgtMsg(message_id))
@@ -681,7 +681,7 @@ class DgtBoard(object):
         bwait = 'Board' + waitchars[self.wait_counter]
         text = Dgt.DISPLAY_TEXT(l='no e-' + bwait, m='no' + bwait, s=bwait, wait=True, beep=False, maxtime=0.1,
                                 devs={'i2c', 'web'})
-        MsgDisplay.show(Message.DGT_NO_EBOARD_ERROR(text=text))
+        MsgDisplay.show(Message.DGT_EBOARD_ERROR(text=text))
         self.wait_counter = (self.wait_counter + 1) % len(waitchars)
         return False
 

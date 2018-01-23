@@ -62,12 +62,12 @@ class DgtDisplay(MsgDisplay, threading.Thread):
     def _power_off(self, dev='web'):
         DgtObserver.fire(self.dgttranslate.text('Y15_goodbye'))
         self.dgtmenu.set_engine_restart(True)
-        EvtObserver.fire(Event.SHUTDOWN(dev=dev))
+        EvtObserver.fire(Event.SYSTEM_SHUTDOWN(dev=dev))
 
     def _reboot(self, dev='web'):
         DgtObserver.fire(self.dgttranslate.text('Y15_pleasewait'))
         self.dgtmenu.set_engine_restart(True)
-        EvtObserver.fire(Event.REBOOT(dev=dev))
+        EvtObserver.fire(Event.SYSTEM_REBOOT(dev=dev))
 
     def _reset_moves_and_score(self):
         self.play_move = chess.Move.null()
@@ -326,7 +326,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 logging.debug('map: New level %s', msg)
                 if not self.dgtmenu.remote_engine:
                     write_picochess_ini('engine-level', msg)
-                EvtObserver.fire(Event.LEVEL(options=level_dict[msg], level_text=text, level_name=msg))
+                EvtObserver.fire(Event.NEW_LEVEL(options=level_dict[msg], level_text=text, level_name=msg))
             else:
                 logging.debug('engine doesnt support levels')
         elif fen in book_map:
@@ -339,7 +339,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 text.beep = self.dgttranslate.bl(BeepLevel.MAP)
                 text.maxtime = 1
                 text.wait = self._exit_menu()
-                EvtObserver.fire(Event.SET_OPENING_BOOK(book=book, book_text=text, show_ok=False))
+                EvtObserver.fire(Event.NEW_BOOK(book=book, book_text=text, show_ok=False))
             except IndexError:
                 pass
         elif fen in engine_map:
@@ -359,8 +359,8 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                             self.dgtmenu.set_engine_level(len_level - 1)
                         msg = sorted(level_dict)[self.dgtmenu.get_engine_level()]
                         options = level_dict[msg]  # cause of "new-engine", send options lateron - now only {}
-                        EvtObserver.fire(Event.LEVEL(options={}, level_text=self.dgttranslate.text('M10_level', msg),
-                                                     level_name=msg))
+                        EvtObserver.fire(Event.NEW_LEVEL(options={}, level_text=self.dgttranslate.text('M10_level', msg),
+                                                         level_name=msg))
                     else:
                         msg = None
                         options = {}
@@ -384,7 +384,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 text.beep = self.dgttranslate.bl(BeepLevel.MAP)
                 text.maxtime = 1  # wait 1sec not forever
                 text.wait = self._exit_menu()
-                EvtObserver.fire(Event.SET_INTERACTION_MODE(mode=mode_map[fen], mode_text=text, show_ok=False))
+                EvtObserver.fire(Event.INTERACTION_MODE(mode=mode_map[fen], mode_text=text, show_ok=False))
 
         elif fen in self.dgtmenu.tc_fixed_map:
             logging.debug('map: Time control fixed')
@@ -393,7 +393,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             text = self.dgttranslate.text('M10_tc_fixed', self.dgtmenu.tc_fixed_list[self.dgtmenu.get_time_fixed()])
             text.wait = self._exit_menu()
             timectrl = self.dgtmenu.tc_fixed_map[fen]  # type: TimeControl
-            EvtObserver.fire(Event.SET_TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
+            EvtObserver.fire(Event.TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
         elif fen in self.dgtmenu.tc_blitz_map:
             logging.debug('map: Time control blitz')
             self.dgtmenu.set_time_mode(TimeMode.BLITZ)
@@ -401,7 +401,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             text = self.dgttranslate.text('M10_tc_blitz', self.dgtmenu.tc_blitz_list[self.dgtmenu.get_time_blitz()])
             text.wait = self._exit_menu()
             timectrl = self.dgtmenu.tc_blitz_map[fen]  # type: TimeControl
-            EvtObserver.fire(Event.SET_TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
+            EvtObserver.fire(Event.TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
         elif fen in self.dgtmenu.tc_fisch_map:
             logging.debug('map: Time control fischer')
             self.dgtmenu.set_time_mode(TimeMode.FISCHER)
@@ -409,7 +409,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             text = self.dgttranslate.text('M10_tc_fisch', self.dgtmenu.tc_fisch_list[self.dgtmenu.get_time_fisch()])
             text.wait = self._exit_menu()
             timectrl = self.dgtmenu.tc_fisch_map[fen]  # type: TimeControl
-            EvtObserver.fire(Event.SET_TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
+            EvtObserver.fire(Event.TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=text, show_ok=False))
         elif fen in shutdown_map:
             logging.debug('map: shutdown')
             self._power_off()
@@ -419,7 +419,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         elif self.drawresign_fen in drawresign_map:
             if not self._inside_main_menu():
                 logging.debug('map: drawresign')
-                EvtObserver.fire(Event.DRAWRESIGN(result=drawresign_map[self.drawresign_fen]))
+                EvtObserver.fire(Event.DRAW_RESIGN(result=drawresign_map[self.drawresign_fen]))
         else:
             bit_board = chess.Board(fen + ' w - - 0 1')
             pos960 = bit_board.chess960_pos(ignore_castling=True)
@@ -431,7 +431,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                     # self._reset_moves_and_score()
                     DgtObserver.fire(self.dgttranslate.text('Y10_error960'))
             else:
-                EvtObserver.fire(Event.FEN(fen=fen))
+                EvtObserver.fire(Event.NEW_FEN(fen=fen))
 
     def _process_engine_ready(self, message):
         for index in range(0, len(self.dgtmenu.installed_engines)):
@@ -461,7 +461,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             DgtObserver.fire(Dgt.LIGHT_CLEAR(devs={'ser', 'web'}))
             self.leds_are_on = False
 
-    def _process_start_new_game(self, message):
+    def _process_new_game(self, message):
         self.force_leds_off()
         self._reset_moves_and_score()
         self.time_control.reset()
@@ -688,8 +688,8 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         elif isinstance(message, Message.COMPUTER_MOVE):
             self._process_computer_move(message)
 
-        elif isinstance(message, Message.START_NEW_GAME):
-            self._process_start_new_game(message)
+        elif isinstance(message, Message.NEW_GAME):
+            self._process_new_game(message)
 
         elif isinstance(message, Message.COMPUTER_MOVE_DONE):
             self._process_computer_move_done()
@@ -705,14 +705,14 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             self.play_mode = message.play_mode
             DgtObserver.fire(self.dgttranslate.text('B05_altmove'))
 
-        elif isinstance(message, Message.LEVEL):
+        elif isinstance(message, Message.NEW_LEVEL):
             if not self.dgtmenu.get_engine_restart():
                 DgtObserver.fire(message.level_text)
 
         elif isinstance(message, Message.TIME_CONTROL):
             self._process_time_control(message)
 
-        elif isinstance(message, Message.OPENING_BOOK):
+        elif isinstance(message, Message.NEW_BOOK):
             if not self.dgtmenu.get_confirm() or not message.show_ok:
                 DgtObserver.fire(message.book_text)
 
@@ -810,7 +810,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         elif isinstance(message, Message.DGT_SERIAL_NR):
             self._process_dgt_serial_nr()
 
-        elif isinstance(message, Message.DGT_JACK_CONNECTED_ERROR):  # only working in case of 2 clocks connected!
+        elif isinstance(message, Message.DGT_JACK_ERROR):  # only working in case of 2 clocks connected!
             DgtObserver.fire(self.dgttranslate.text('Y00_errorjack'))
 
         elif isinstance(message, Message.DGT_EBOARD_VERSION):
@@ -820,13 +820,13 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 DgtObserver.fire(message.text)
                 self._exit_display(devs={'i2c', 'web'})  # ser is done, when clock found
 
-        elif isinstance(message, Message.DGT_NO_EBOARD_ERROR):
+        elif isinstance(message, Message.DGT_EBOARD_ERROR):
             if self.dgtmenu.inside_updt_menu() or self.dgtmenu.inside_main_menu():
                 logging.debug('inside menu => board error not displayed')
             else:
                 DgtObserver.fire(message.text)
 
-        elif isinstance(message, Message.DGT_NO_CLOCK_ERROR):
+        elif isinstance(message, Message.DGT_CLOCK_ERROR):
             pass
 
         elif isinstance(message, Message.SWITCH_SIDES):
@@ -849,7 +849,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         elif isinstance(message, Message.UPDATE_PICO):
             DgtObserver.fire(self.dgttranslate.text('Y00_update'))
 
-        elif isinstance(message, Message.BATTERY):
+        elif isinstance(message, Message.BATTERY_BT):
             if message.percent == 0x7f:
                 percent = ' NA'
             elif message.percent > 99:

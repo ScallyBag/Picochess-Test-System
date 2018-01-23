@@ -113,8 +113,8 @@ class TimeControl(object):
         """Set the start time to the current time."""
         self.start_time = time.time()
 
-    def _out_of_time(self, time_start):
-        """Fire an OUT_OF_TIME event."""
+    def _flag_time(self, time_start):
+        """Fire a CLOCK_FLAG event."""
         self.run_color = None
         if self.mode == TimeMode.FIXED:
             logging.debug('timeout - but in "MoveTime" mode, dont fire event')
@@ -122,7 +122,7 @@ class TimeControl(object):
             display_color = 'WHITE' if self.active_color == chess.WHITE else 'BLACK'
             txt = 'current clock time (before subtracting) is %f and color is %s, out of time event started from %f'
             logging.debug(txt, self.internal_time[self.active_color], display_color, time_start)
-            EvtObserver.fire(Event.OUT_OF_TIME(color=self.active_color))
+            EvtObserver.fire(Event.CLOCK_FLAG(color=self.active_color))
 
     def add_time(self, color):
         """Add the increment value to the color given."""
@@ -160,7 +160,7 @@ class TimeControl(object):
 
             # Only start thread if not already started for same color, and the player has not already lost on time
             if self.internal_time[color] > 0 and self.active_color is not None and self.run_color != self.active_color:
-                self.timer = threading.Timer(copy.copy(self.internal_time[color]), self._out_of_time,
+                self.timer = threading.Timer(copy.copy(self.internal_time[color]), self._flag_time,
                                              [copy.copy(self.internal_time[color])])
                 self.timer.start()
                 logging.debug('internal timer started - color: %s run: %s active: %s',

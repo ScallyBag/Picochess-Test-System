@@ -468,7 +468,7 @@ class GameResult(MyEnum):
 
     MATE = 'B00_gameresult_mate'
     STALEMATE = 'B00_gameresult_stalemate'
-    OUT_OF_TIME = 'B00_gameresult_time'
+    FLAG_TIME = 'B00_gameresult_time'
     INSUFFICIENT_MATERIAL = 'B00_gameresult_material'
     SEVENTYFIVE_MOVES = 'B00_gameresult_moves'
     FIVEFOLD_REPETITION = 'B00_gameresult_repetition'

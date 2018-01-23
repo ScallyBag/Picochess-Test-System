@@ -713,7 +713,7 @@ class DgtMenu(object):
 
     def _fire_timectrl(self, timectrl: TimeControl):
         time_text = self.dgttranslate.text('B10_oktime')
-        event = Event.SET_TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=time_text, show_ok=True)
+        event = Event.TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=time_text, show_ok=True)
         return self._fire_event(event)
 
     def exit_menu(self):
@@ -914,7 +914,7 @@ class DgtMenu(object):
                 text = Dgt.DISPLAY_TIME(force=True, wait=True, devs={'ser', 'i2c', 'web'})
             else:
                 mode_text = self.dgttranslate.text('B10_okmode')
-                event = Event.SET_INTERACTION_MODE(mode=self.menu_mode, mode_text=mode_text, show_ok=True)
+                event = Event.INTERACTION_MODE(mode=self.menu_mode, mode_text=mode_text, show_ok=True)
                 text = self._fire_event(event)
 
         elif self.state == MenuState.POS:
@@ -986,7 +986,7 @@ class DgtMenu(object):
         elif self.state == MenuState.BOOK_NAME:
             # do action!
             book_text = self.dgttranslate.text('B10_okbook')
-            event = Event.SET_OPENING_BOOK(book=self.all_books[self.menu_book], book_text=book_text, show_ok=True)
+            event = Event.NEW_BOOK(book=self.all_books[self.menu_book], book_text=book_text, show_ok=True)
             text = self._fire_event(event)
 
         elif self.state == MenuState.ENG:
@@ -1013,7 +1013,7 @@ class DgtMenu(object):
                 options = level_dict[msg]
                 if not self.remote_engine:
                     write_picochess_ini('engine-level', msg)
-                event = Event.LEVEL(options={}, level_text=self.dgttranslate.text('B10_level', msg), level_name=msg)
+                event = Event.NEW_LEVEL(options={}, level_text=self.dgttranslate.text('B10_level', msg), level_name=msg)
                 EvtObserver.fire(event)
             else:
                 options = {}
@@ -1126,7 +1126,7 @@ class DgtMenu(object):
                 if 'user-voice' in config:
                     del config['user-voice']
                     config.write()
-                event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
+                event = Event.NEW_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
                 EvtObserver.fire(event)
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
@@ -1141,7 +1141,7 @@ class DgtMenu(object):
             skey = speakers[self.menu_system_voice_user_speak]
             config['user-voice'] = vkey + ':' + skey
             config.write()
-            event = Event.SET_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
+            event = Event.NEW_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.menu_system_voice_speedfactor)
             EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
@@ -1155,7 +1155,7 @@ class DgtMenu(object):
                 if 'computer-voice' in config:
                     del config['computer-voice']
                     config.write()
-                event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
+                event = Event.NEW_VOICE(type=self.menu_system_voice, lang='en', speaker='mute', speed=2)
                 EvtObserver.fire(event)
                 text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
 
@@ -1170,7 +1170,7 @@ class DgtMenu(object):
             skey = speakers[self.menu_system_voice_comp_speak]
             config['computer-voice'] = vkey + ':' + skey
             config.write()
-            event = Event.SET_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
+            event = Event.NEW_VOICE(type=self.menu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.menu_system_voice_speedfactor)
             EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
@@ -1183,7 +1183,7 @@ class DgtMenu(object):
             # do action!
             assert self.menu_system_voice == Voice.SPEED, 'menu item is not Voice.SPEED: %s' % self.menu_system_voice
             write_picochess_ini('speed-voice', self.menu_system_voice_speedfactor)
-            event = Event.SET_VOICE(type=self.menu_system_voice, lang='en', speaker='mute',  # lang & speaker ignored
+            event = Event.NEW_VOICE(type=self.menu_system_voice, lang='en', speaker='mute',  # lang & speaker ignored
                                     speed=self.menu_system_voice_speedfactor)
             EvtObserver.fire(event)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okspeed'))

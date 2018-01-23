@@ -49,24 +49,24 @@ class EventApi():
     """The api for the events."""
 
     # User events
-    FEN = 'EVT_FEN'  # User has moved one or more pieces, and we have a new fen position
-    LEVEL = 'EVT_LEVEL'  # User sets engine level
+    NEW_FEN = 'EVT_NEW_FEN'  # User has moved one or more pieces, and we have a new fen position
+    NEW_LEVEL = 'EVT_NEW_LEVEL'  # User sets engine level
     NEW_GAME = 'EVT_NEW_GAME'  # User starts a new game
-    DRAWRESIGN = 'EVT_DRAWRESIGN'  # User declares a resignation or draw
+    DRAW_RESIGN = 'EVT_DRAW_RESIGN'  # User declares a resignation or draw
     KEYBOARD_MOVE = 'EVT_KEYBOARD_MOVE'  # Keyboard sends a move (to be transfered to a fen)
     REMOTE_MOVE = 'EVT_REMOTE_MOVE'  # Remote player move
-    SET_OPENING_BOOK = 'EVT_SET_OPENING_BOOK'  # User chooses an opening book
+    NEW_BOOK = 'EVT_NEW_BOOK'  # User chooses an opening book
     NEW_ENGINE = 'EVT_NEW_ENGINE'  # Change engine
-    SET_INTERACTION_MODE = 'EVT_SET_INTERACTION_MODE'  # Change interaction mode
+    INTERACTION_MODE = 'EVT_INTERACTION_MODE'  # Change interaction mode
     SETUP_POSITION = 'EVT_SETUP_POSITION'  # Setup custom position
     PAUSE_RESUME = 'EVT_PAUSE_RESUME'  # Stops search or halt/resume running clock
     SWITCH_SIDES = 'EVT_SWITCH_SIDES'  # Switch the side
-    SET_TIME_CONTROL = 'EVT_SET_TIME_CONTROL'  # User sets time control
-    SHUTDOWN = 'EVT_SHUTDOWN'  # User wants to shutdown the machine
-    REBOOT = 'EVT_REBOOT'  # User wants to reboot the machine
+    TIME_CONTROL = 'EVT_TIME_CONTROL'  # User sets time control
+    SYSTEM_SHUTDOWN = 'EVT_SYSTEM_SHUTDOWN'  # User wants to shutdown the machine
+    SYSTEM_REBOOT = 'EVT_SYSTEM_REBOOT'  # User wants to reboot the machine
     ALTERNATIVE_MOVE = 'EVT_ALTERNATIVE_MOVE'  # User wants engine to recalculate the position
     EMAIL_LOG = 'EVT_EMAIL_LOG'  # User want to send the log file by eMail
-    SET_VOICE = 'EVT_SET_VOICE'  # User sets a new voice
+    NEW_VOICE = 'EVT_NEW_VOICE'  # User sets a new voice
     # Keyboard events
     KEYBOARD_BUTTON = 'EVT_KEYBOARD_BUTTON'  # User pressed a button at the virtual clock
     KEYBOARD_FEN = 'EVT_KEYBOARD_FEN'  # Virtual board sends a fen
@@ -78,7 +78,7 @@ class EventApi():
     START_SEARCH = 'EVT_START_SEARCH'  # Engine starts the search
     STOP_SEARCH = 'EVT_STOP_SEARCH'  # Engine stops the search
     # Timecontrol events
-    OUT_OF_TIME = 'EVT_OUT_OF_TIME'  # Clock flag fallen
+    CLOCK_FLAG = 'EVT_CLOCK_FLAG'  # Clock flag fallen
     CLOCK_TIME = 'EVT_CLOCK_TIME'  # Clock sends its time
     # Special events
     EXIT_MENU = 'EVT_EXIT_MENU'  # User exists the menu
@@ -98,23 +98,23 @@ class MessageApi():
     ENGINE_READY = 'MSG_ENGINE_READY'
     ENGINE_STARTUP = 'MSG_ENGINE_STARTUP'  # first time a new engine is ready
     ENGINE_FAIL = 'MSG_ENGINE_FAIL'  # Engine startup fails
-    LEVEL = 'MSG_LEVEL'  # User sets engine level
+    NEW_LEVEL = 'MSG_NEW_LEVEL'  # User sets new engine level
     TIME_CONTROL = 'MSG_TIME_CONTROL'  # New Timecontrol
-    OPENING_BOOK = 'MSG_OPENING_BOOK'  # User chooses an opening book
+    NEW_BOOK = 'MSG_NEW_BOOK'  # User chooses an opening book
 
     DGT_BUTTON = 'MSG_DGT_BUTTON'  # Clock button pressed
     DGT_FEN = 'MSG_DGT_FEN'  # DGT Board sends a fen
     DGT_CLOCK_VERSION = 'MSG_DGT_CLOCK_VERSION'  # DGT Board sends the clock version
     DGT_CLOCK_TIME = 'MSG_DGT_CLOCK_TIME'  # DGT Clock time message
     DGT_SERIAL_NR = 'MSG_DGT_SERIAL_NR'  # DGT Clock serial_nr (used for watchdog only)
-    DGT_JACK_CONNECTED_ERROR = 'MSG_DGT_JACK_CONNECTED_ERROR'  # User connected fully|partly the clock via jack
-    DGT_NO_CLOCK_ERROR = 'MSG_DGT_NO_CLOCK_ERROR'  # User hasnt connected a clock
-    DGT_NO_EBOARD_ERROR = 'MSG_DGT_NO_EBOARD_ERROR'  # User hasnt connected an E-Board
+    DGT_JACK_ERROR = 'MSG_DGT_JACK_ERROR'  # User connected fully|partly the clock via jack
+    DGT_CLOCK_ERROR = 'MSG_DGT_CLOCK_ERROR'  # User hasnt connected a clock
+    DGT_EBOARD_ERROR = 'MSG_DGT_NO_EBOARD_ERROR'  # User hasnt connected an E-Board
     DGT_EBOARD_VERSION = 'MSG_DGT_EBOARD_VERSION'  # Startup Message after a successful connection to an E-Board
 
     INTERACTION_MODE = 'MSG_INTERACTON_MODE'  # Interaction mode
     PLAY_MODE = 'MSG_PLAY_MODE'  # Play mode
-    START_NEW_GAME = 'MSG_START_NEW_GAME'  # User starts a new game
+    NEW_GAME = 'MSG_NEW_GAME'  # User starts a new game
     COMPUTER_MOVE_DONE = 'MSG_COMPUTER_MOVE_DONE'  # User has done the computer move on board
     SEARCH_STARTED = 'MSG_SEARCH_STARTED'  # Engine has started to search
     SEARCH_STOPPED = 'MSG_SEARCH_STOPPED'  # Engine has stopped the search
@@ -134,11 +134,11 @@ class MessageApi():
     SWITCH_SIDES = 'MSG_SWITCH_SIDES'  # Forget the engines move, and let it be user's turn
     SYSTEM_SHUTDOWN = 'MSG_SYSTEM_SHUTDOWN'  # Sends a Shutdown
     SYSTEM_REBOOT = 'MSG_SYSTEM_REBOOT'  # Sends a Reboot
-    SET_VOICE = 'MSG_SET_VOICE'  # User chooses a new voice
+    NEW_VOICE = 'MSG_NEW_VOICE'  # User chooses a new voice
 
     EXIT_MENU = 'MSG_EXIT_MENU'  # User exits the menu
     WRONG_FEN = 'MSG_WRONG_FEN'  # User sends a wrong placement of pieces (timed)
-    BATTERY = 'MSG_BATTERY'  # percent of BT battery
+    BATTERY_BT = 'MSG_BATTERY_BT'  # percent of BT battery
     UPDATE_PICO = 'MSG_UPDATE'  # User wants to update picochess
     REMOTE_ROOM = 'MSG_REMOTE_ROOM'  # User enters/leaves a remote room
 
@@ -157,7 +157,6 @@ class DgtApi():
     CLOCK_START = 'DGT_CLOCK_START'
     CLOCK_STOP = 'DGT_CLOCK_STOP'
     CLOCK_VERSION = 'DGT_CLOCK_VERSION'
-    SERIALNR = 'DGT_SERIALNR'
 
 
 class Dgt():
@@ -191,23 +190,23 @@ class Message():
     ENGINE_STARTUP = ClassFactory(MessageApi.ENGINE_STARTUP, ['installed_engines', 'file', 'level_index', 'has_960',
                                                               'has_ponder'])
     ENGINE_FAIL = ClassFactory(MessageApi.ENGINE_FAIL, [])
-    LEVEL = ClassFactory(MessageApi.LEVEL, ['level_text', 'level_name', 'do_speak'])
+    NEW_LEVEL = ClassFactory(MessageApi.NEW_LEVEL, ['level_text', 'level_name', 'do_speak'])
     TIME_CONTROL = ClassFactory(MessageApi.TIME_CONTROL, ['time_text', 'show_ok', 'tc_init'])
-    OPENING_BOOK = ClassFactory(MessageApi.OPENING_BOOK, ['book_text', 'show_ok'])
+    NEW_BOOK = ClassFactory(MessageApi.NEW_BOOK, ['book_text', 'show_ok'])
 
     DGT_BUTTON = ClassFactory(MessageApi.DGT_BUTTON, ['button', 'dev'])
     DGT_FEN = ClassFactory(MessageApi.DGT_FEN, ['fen', 'raw'])
     DGT_CLOCK_VERSION = ClassFactory(MessageApi.DGT_CLOCK_VERSION, ['main', 'sub', 'dev', 'text'])
     DGT_CLOCK_TIME = ClassFactory(MessageApi.DGT_CLOCK_TIME, ['time_left', 'time_right' , 'connect', 'dev'])
     DGT_SERIAL_NR = ClassFactory(MessageApi.DGT_SERIAL_NR, ['number'])
-    DGT_JACK_CONNECTED_ERROR = ClassFactory(MessageApi.DGT_JACK_CONNECTED_ERROR, [])
-    DGT_NO_CLOCK_ERROR = ClassFactory(MessageApi.DGT_NO_CLOCK_ERROR, ['text'])
-    DGT_NO_EBOARD_ERROR = ClassFactory(MessageApi.DGT_NO_EBOARD_ERROR, ['text'])
+    DGT_JACK_ERROR = ClassFactory(MessageApi.DGT_JACK_ERROR, [])
+    DGT_CLOCK_ERROR = ClassFactory(MessageApi.DGT_CLOCK_ERROR, ['text'])
+    DGT_EBOARD_ERROR = ClassFactory(MessageApi.DGT_EBOARD_ERROR, ['text'])
     DGT_EBOARD_VERSION = ClassFactory(MessageApi.DGT_EBOARD_VERSION, ['text', 'channel'])
 
     INTERACTION_MODE = ClassFactory(MessageApi.INTERACTION_MODE, ['mode', 'mode_text', 'show_ok'])
     PLAY_MODE = ClassFactory(MessageApi.PLAY_MODE, ['play_mode', 'play_mode_text'])
-    START_NEW_GAME = ClassFactory(MessageApi.START_NEW_GAME, ['game', 'newgame'])
+    NEW_GAME = ClassFactory(MessageApi.NEW_GAME, ['game', 'newgame'])
     COMPUTER_MOVE_DONE = ClassFactory(MessageApi.COMPUTER_MOVE_DONE, [])
     SEARCH_STARTED = ClassFactory(MessageApi.SEARCH_STARTED, [])
     SEARCH_STOPPED = ClassFactory(MessageApi.SEARCH_STOPPED, [])
@@ -227,11 +226,11 @@ class Message():
     SWITCH_SIDES = ClassFactory(MessageApi.SWITCH_SIDES, ['game', 'move'])
     SYSTEM_SHUTDOWN = ClassFactory(MessageApi.SYSTEM_SHUTDOWN, [])
     SYSTEM_REBOOT = ClassFactory(MessageApi.SYSTEM_REBOOT, [])
-    SET_VOICE = ClassFactory(MessageApi.SET_VOICE, ['type', 'lang', 'speaker', 'speed'])
+    NEW_VOICE = ClassFactory(MessageApi.NEW_VOICE, ['type', 'lang', 'speaker', 'speed'])
 
     EXIT_MENU = ClassFactory(MessageApi.EXIT_MENU, [])
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
-    BATTERY = ClassFactory(MessageApi.BATTERY, ['percent'])
+    BATTERY_BT = ClassFactory(MessageApi.BATTERY_BT, ['percent'])
     UPDATE_PICO = ClassFactory(MessageApi.UPDATE_PICO, [])
     REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['inside'])
 
@@ -241,24 +240,24 @@ class Event():
     """Event used to send towards picochess."""
 
     # User events
-    FEN = ClassFactory(EventApi.FEN, ['fen'])
-    LEVEL = ClassFactory(EventApi.LEVEL, ['options', 'level_text', 'level_name'])
+    NEW_FEN = ClassFactory(EventApi.NEW_FEN, ['fen'])
+    NEW_LEVEL = ClassFactory(EventApi.NEW_LEVEL, ['options', 'level_text', 'level_name'])
     NEW_GAME = ClassFactory(EventApi.NEW_GAME, ['pos960'])
-    DRAWRESIGN = ClassFactory(EventApi.DRAWRESIGN, ['result'])
+    DRAW_RESIGN = ClassFactory(EventApi.DRAW_RESIGN, ['result'])
     KEYBOARD_MOVE = ClassFactory(EventApi.KEYBOARD_MOVE, ['move'])
     REMOTE_MOVE = ClassFactory(EventApi.REMOTE_MOVE, ['move', 'fen'])
-    SET_OPENING_BOOK = ClassFactory(EventApi.SET_OPENING_BOOK, ['book', 'book_text', 'show_ok'])
+    NEW_BOOK = ClassFactory(EventApi.NEW_BOOK, ['book', 'book_text', 'show_ok'])
     NEW_ENGINE = ClassFactory(EventApi.NEW_ENGINE, ['eng', 'eng_text', 'options', 'show_ok'])
-    SET_INTERACTION_MODE = ClassFactory(EventApi.SET_INTERACTION_MODE, ['mode', 'mode_text', 'show_ok'])
+    INTERACTION_MODE = ClassFactory(EventApi.INTERACTION_MODE, ['mode', 'mode_text', 'show_ok'])
     SETUP_POSITION = ClassFactory(EventApi.SETUP_POSITION, ['fen', 'uci960'])
     PAUSE_RESUME = ClassFactory(EventApi.PAUSE_RESUME, [])
     SWITCH_SIDES = ClassFactory(EventApi.SWITCH_SIDES, [])
-    SET_TIME_CONTROL = ClassFactory(EventApi.SET_TIME_CONTROL, ['tc_init', 'time_text', 'show_ok'])
-    SHUTDOWN = ClassFactory(EventApi.SHUTDOWN, ['dev'])
-    REBOOT = ClassFactory(EventApi.REBOOT, ['dev'])
+    TIME_CONTROL = ClassFactory(EventApi.TIME_CONTROL, ['tc_init', 'time_text', 'show_ok'])
+    SYSTEM_SHUTDOWN = ClassFactory(EventApi.SYSTEM_SHUTDOWN, ['dev'])
+    SYSTEM_REBOOT = ClassFactory(EventApi.SYSTEM_REBOOT, ['dev'])
     ALTERNATIVE_MOVE = ClassFactory(EventApi.ALTERNATIVE_MOVE, [])
     EMAIL_LOG = ClassFactory(EventApi.EMAIL_LOG, [])
-    SET_VOICE = ClassFactory(EventApi.SET_VOICE, ['type', 'lang', 'speaker', 'speed'])
+    NEW_VOICE = ClassFactory(EventApi.NEW_VOICE, ['type', 'lang', 'speaker', 'speed'])
     # Keyboard events
     KEYBOARD_BUTTON = ClassFactory(EventApi.KEYBOARD_BUTTON, ['button', 'dev'])
     KEYBOARD_FEN = ClassFactory(EventApi.KEYBOARD_FEN, ['fen'])
@@ -270,7 +269,7 @@ class Event():
     START_SEARCH = ClassFactory(EventApi.START_SEARCH, [])
     STOP_SEARCH = ClassFactory(EventApi.STOP_SEARCH, [])
     # Timecontrol events
-    OUT_OF_TIME = ClassFactory(EventApi.OUT_OF_TIME, ['color'])
+    CLOCK_FLAG = ClassFactory(EventApi.CLOCK_FLAG, ['color'])
     CLOCK_TIME = ClassFactory(EventApi.CLOCK_TIME, ['time_white', 'time_black', 'connect', 'dev'])
     # special events
     EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, [])

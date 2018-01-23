@@ -162,9 +162,9 @@ class PicoTalkerDisplay(MsgDisplay, threading.Thread):
                     logging.debug('announcing ENGINE_FAIL')
                     self.talk(['error.ogg'])
 
-                elif isinstance(message, Message.START_NEW_GAME):
+                elif isinstance(message, Message.NEW_GAME):
                     if message.newgame:
-                        logging.debug('announcing START_NEW_GAME')
+                        logging.debug('announcing NEW_GAME')
                         self.talk(['newgame.ogg'])
                         self.play_game = None
 
@@ -195,8 +195,8 @@ class PicoTalkerDisplay(MsgDisplay, threading.Thread):
                         self.play_game = None  # @todo why thats not set in dgtdisplay?
 
                 elif isinstance(message, Message.GAME_ENDS):
-                    if message.result == GameResult.OUT_OF_TIME:
-                        logging.debug('announcing GAME_ENDS/TIME_CONTROL')
+                    if message.result == GameResult.FLAG_TIME:
+                        logging.debug('announcing GAME_ENDS/CLOCK FLAG')
                         wins = 'whitewins.ogg' if message.game.turn == chess.BLACK else 'blackwins.ogg'
                         self.talk(['timelost.ogg', wins])
                     elif message.result == GameResult.INSUFFICIENT_MATERIAL:
@@ -238,14 +238,14 @@ class PicoTalkerDisplay(MsgDisplay, threading.Thread):
                     logging.debug('announcing INTERACTION_MODE')
                     self.talk(['okmode.ogg'])
 
-                elif isinstance(message, Message.LEVEL):
+                elif isinstance(message, Message.NEW_LEVEL):
                     if message.do_speak:
                         logging.debug('announcing LEVEL')
                         self.talk(['oklevel.ogg'])
                     else:
                         logging.debug('dont announce LEVEL cause its also an engine message')
 
-                elif isinstance(message, Message.OPENING_BOOK):
+                elif isinstance(message, Message.NEW_BOOK):
                     logging.debug('announcing OPENING_BOOK')
                     self.talk(['okbook.ogg'])
 
@@ -282,7 +282,7 @@ class PicoTalkerDisplay(MsgDisplay, threading.Thread):
                     logging.debug('announcing REBOOT')
                     self.talk(['pleasewait.ogg'])
 
-                elif isinstance(message, Message.SET_VOICE):
+                elif isinstance(message, Message.NEW_VOICE):
                     self.speed_factor = (90 + (message.speed % 10) * 5) / 100
                     localisation_id_voice = message.lang + ':' + message.speaker
                     if message.type == Voice.USER:

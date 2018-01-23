@@ -175,7 +175,7 @@ class PgnDisplay(MsgDisplay, threading.Thread):
             pgn_game.headers['Result'] = '1/2-1/2'
         elif message.result in (GameResult.WIN_WHITE, GameResult.WIN_BLACK):
             pgn_game.headers['Result'] = '1-0' if message.result == GameResult.WIN_WHITE else '0-1'
-        elif message.result == GameResult.OUT_OF_TIME:
+        elif message.result == GameResult.FLAG_TIME:
             pgn_game.headers['Result'] = '0-1' if message.game.turn == chess.WHITE else '1-0'
 
         if self.level_text is None:
@@ -227,7 +227,7 @@ class PgnDisplay(MsgDisplay, threading.Thread):
             self.level_text = message.info['level_text']
             self.level_name = message.info['level_name']
 
-        elif isinstance(message, Message.LEVEL):
+        elif isinstance(message, Message.NEW_LEVEL):
             self.level_text = message.level_text
             self.level_name = message.level_name
 
@@ -256,7 +256,7 @@ class PgnDisplay(MsgDisplay, threading.Thread):
             if message.game.move_stack:
                 self._save_and_email_pgn(message)
 
-        elif isinstance(message, Message.START_NEW_GAME):
+        elif isinstance(message, Message.NEW_GAME):
             self.startime = datetime.datetime.now().strftime('%H:%M:%S')
 
         else:  # Default

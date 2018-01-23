@@ -51,11 +51,11 @@ class DgtPi(DgtDisplayIface):
     def _startup_i2c_clock(self):
         while self.lib.dgtpicom_init() < 0:
             logging.warning('Init() failed - Jack half connected?')
-            MsgDisplay.show(Message.DGT_JACK_CONNECTED_ERROR())
+            MsgDisplay.show(Message.DGT_JACK_ERROR())
             time.sleep(0.5)  # dont flood the log
         if self.lib.dgtpicom_configure() < 0:
             logging.warning('Configure() failed - Jack connected back?')
-            MsgDisplay.show(Message.DGT_JACK_CONNECTED_ERROR())
+            MsgDisplay.show(Message.DGT_JACK_ERROR())
         MsgDisplay.show(Message.DGT_CLOCK_VERSION(main=2, sub=2, dev='i2c', text=None))
 
     def _process_incoming_clock_forever(self):

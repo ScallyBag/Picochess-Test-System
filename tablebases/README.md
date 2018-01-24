@@ -5,6 +5,6 @@ that these files are not used out of the box for picochess or its engines. To ma
 of each engine.
 
 
-If you have problems please don't hassitate to contact me over eMail or skype.
+If you have problems please don't hassitate to contact me over eMail or gitter.
 
 LocutusOfPenguin

@@ -76,7 +76,7 @@ engines are set with the extra **black** queen.
 
 * **A6** - Stockfish 8
 * **B6** - Texel 1.07
-* **C6** - Arasan 20.3
+* **C6** - Arasan 20.4
 * **D6** - Rodent III
 * **E6** - Zurichess neuchatel
 * **F6** - WyldChess 10062017

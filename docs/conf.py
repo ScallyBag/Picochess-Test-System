@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'PicoChess'
-copyright = u'2014-2017, Jean-Francois Romang, Shivkumar Shivaji, Jürgen Précour'
+copyright = u'2014-2018, Jean-Francois Romang, Shivkumar Shivaji, Jürgen Précour'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -5,6 +5,6 @@ from jessie system onwards. Please copy *.service & *.target files to the "/etc/
 you only need if you have a DgtPi chess computer.
 
 
-If you have problems please don't hassitate to contact me over eMail or skype.
+If you have problems please don't hassitate to contact me over eMail or gitter.
 
 LocutusOfPenguin

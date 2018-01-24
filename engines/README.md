@@ -28,6 +28,6 @@ In case of rodent_III you must also make sure the engine is running in "SHOW_OPT
 The order of sections in yr_engine_name.uci or engines.ini decides the order for the menu. Also the first 8 sections are used for the queen fields for quick selection.
 So please sort the sections as you want them to be. The "./build/*.py" files, trying to do the best they can to have a reasonable first configuration.
 
-If you have problems please don't hassitate to contact me over eMail or gitter.
+If you have problems please don't hesitate to contact me over eMail or gitter.
 
 LocutusOfPenguin

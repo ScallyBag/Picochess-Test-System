@@ -4,6 +4,6 @@ This folder is for OLD script files. They shouldnt be needed anymore (maybe for 
 The dgt board incl. its BT connection, dgt clocks, Rev2 chess computer and so on are now automatically found.
 
 
-If you have problems please don't hassitate to contact me over eMail or gitter.
+If you have problems please don't hesitate to contact me over eMail or gitter.
 
 LocutusOfPenguin

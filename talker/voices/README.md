@@ -12,6 +12,6 @@ If you cant program in python but like this project you can help us to give such
 Lateron the whole world will hear you speaking for picochess (inside the DGTPi for example). So get famous and give back something.
 
 
-If you have problems please don't hassitate to contact me over eMail or gitter.
+If you have problems please don't hesitate to contact me over eMail or gitter.
 
 LocutusOfPenguin

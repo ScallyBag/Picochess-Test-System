@@ -100,6 +100,7 @@ class UciEngine(object):
 
     def send(self):
         """Send options to engine."""
+        logging.debug('setting engine with options %s', self.options)
         self.engine.setoption(self.options)
 
     def has_levels(self):
@@ -246,11 +247,18 @@ class UciEngine(object):
         self.engine.ucinewgame()
         self.engine.position(game)
 
-    def mode(self, ponder: bool, analyse: bool):
+    def mode_send(self, ponder: bool, analyse: bool):
         """Set engine mode."""
-        self.engine.setoption({'Ponder': ponder, 'UCI_AnalyseMode': analyse})
+        self.option('Ponder', ponder)
+        self.option('UCI_AnalyseMode', analyse)
+        self.send()
 
-    def startup(self, options: dict, show=True):
+    def chess960_send(self):
+        if self.has_chess960():
+            self.option('UCI_Chess960', True)  # change True to game.has_chess960_castling_rights() => TakeBack Problem
+        self.send()
+
+    def startup(self, options: dict, game: Board, new_game=True):
         """Startup engine."""
         parser = configparser.ConfigParser()
         parser.optionxform = str
@@ -269,10 +277,9 @@ class UciEngine(object):
                 options = dict(parser[parser.sections().pop()])
 
         self.level_support = bool(options)
-
-        logging.debug('setting engine with options %s', options)
         self.options = options
-        self.send()
-        if show:
+        self.chess960_send()
+        if new_game:
+            self.newgame(game)
             logging.debug('Loaded engine [%s]', self.get_name())
             logging.debug('Supported options [%s]', self.get_options())

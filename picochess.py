@@ -525,7 +525,7 @@ def main():
                     break
         return {}, None
 
-    def engine_mode():
+    def set_engine_mode():
         ponder_mode = analyse_mode = False
         if False:  # switch-case
             pass
@@ -535,7 +535,7 @@ def main():
             ponder_mode = True
         elif interaction_mode in (Mode.ANALYSIS, Mode.KIBITZ, Mode.OBSERVE, Mode.PONDER):
             analyse_mode = True
-        engine.mode(ponder=ponder_mode, analyse=analyse_mode)
+        engine.mode_send(ponder=ponder_mode, analyse=analyse_mode)
 
     def _dgt_serial_nr():
         MsgDisplay.show(Message.DGT_SERIAL_NR(number='dont_use'))
@@ -730,8 +730,7 @@ def main():
 
     args.engine_level = None if args.engine_level == 'None' else args.engine_level
     engine_opt, level_index = get_engine_level_dict(args.engine_level)
-    engine.startup(engine_opt)
-    engine.newgame(game.copy())
+    engine.startup(engine_opt, game.copy())
 
     # Startup - external
     level_name = args.engine_level
@@ -787,7 +786,7 @@ def main():
 
             elif isinstance(event, Event.NEW_LEVEL):
                 if event.options:
-                    engine.startup(event.options, False)
+                    engine.startup(event.options, game.copy(), False)
                 MsgDisplay.show(Message.NEW_LEVEL(level_text=event.level_text, level_name=event.level_name,
                                                   do_speak=bool(event.options)))
                 stop_fen_timer()
@@ -821,19 +820,17 @@ def main():
                             MsgDisplay.show(Message.ENGINE_FAIL())
                             time.sleep(3)
                             sys.exit(-1)
-                    engine.startup(event.options)
-                    engine.newgame(game.copy())
                     # All done - rock'n'roll
                     if interaction_mode == Mode.BRAIN and not engine.has_ponder():
                         logging.debug('new engine doesnt support brain mode, reverting to %s', old_file)
                         engine_fallback = True
                         if engine.quit():
                             engine = UciEngine(file=old_file, uci_shell=uci_shell)
-                            engine.startup(old_options)
-                            engine.newgame(game.copy())
+                            event.options = old_options
                         else:
                             logging.error('engine shutdown failure')
-                    engine_mode()
+                    engine.startup(event.options, game.copy())
+                    set_engine_mode()
                     if engine_fallback:
                         msg = Message.ENGINE_FAIL()
                     else:
@@ -865,9 +862,7 @@ def main():
                 game = chess.Board(event.fen, uci960)
                 # see new_game
                 stop_search_and_clock()
-                if engine.has_chess960():
-                    engine.option('UCI_Chess960', uci960)
-                    engine.send()
+                engine.chess960_send()
                 engine.newgame(game.copy())
                 done_computer_fen = None
                 done_move = pb_move = chess.Move.null()
@@ -891,9 +886,7 @@ def main():
                         game.set_chess960_pos(event.pos960)
                     # see setup_position
                     stop_search_and_clock()
-                    if engine.has_chess960():
-                        engine.option('UCI_Chess960', uci960)
-                        engine.send()
+                    engine.chess960_send()
                     engine.newgame(game.copy())
                     done_computer_fen = None
                     done_move = pb_move = chess.Move.null()
@@ -1052,7 +1045,7 @@ def main():
                 else:
                     stop_search_and_clock()
                     interaction_mode = event.mode
-                    engine_mode()
+                    set_engine_mode()
                     msg = Message.INTERACTION_MODE(mode=event.mode, mode_text=event.mode_text, show_ok=event.show_ok)
                     set_wait_state(msg)  # dont clear searchmoves here
 

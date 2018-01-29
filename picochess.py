@@ -300,7 +300,7 @@ def main():
                         engine.hit()  # finally tell the engine
             elif interaction_mode == Mode.REMOTE:
                 msg = Message.USER_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy())
-                game_end = check_game_state(game, play_mode)
+                game_end = check_game_state(game, play_mode)  # type: Message
                 if game_end:
                     MsgDisplay.show(msg)
                     MsgDisplay.show(game_end)
@@ -308,7 +308,7 @@ def main():
                     observe(game, msg)
             elif interaction_mode == Mode.OBSERVE:
                 msg = Message.REVIEW_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy())
-                game_end = check_game_state(game, play_mode)
+                game_end = check_game_state(game, play_mode)  # type: Message
                 if game_end:
                     MsgDisplay.show(msg)
                     MsgDisplay.show(game_end)
@@ -316,7 +316,7 @@ def main():
                     observe(game, msg)
             else:  # interaction_mode in (Mode.ANALYSIS, Mode.KIBITZ, Mode.PONDER):
                 msg = Message.REVIEW_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy())
-                game_end = check_game_state(game, play_mode)
+                game_end = check_game_state(game, play_mode)  # type: Message
                 if game_end:
                     MsgDisplay.show(msg)
                     MsgDisplay.show(game_end)
@@ -406,7 +406,7 @@ def main():
             game.push(done_move)
             done_computer_fen = None
             done_move = chess.Move.null()
-            game_end = check_game_state(game, play_mode)
+            game_end = check_game_state(game, play_mode)  # type: Message
             if game_end:
                 legal_fens = []
                 MsgDisplay.show(game_end)
@@ -679,7 +679,9 @@ def main():
 
     # Update
     if args.enable_update:
-        update_picochess(args.dgtpi, args.enable_update_reboot, dgttranslate)
+        if update_picochess(dgttranslate):
+            if args.enable_update_reboot:
+                reboot(args.dgtpi, dev='web')
 
     # try the given engine first and if that fails the first/second from "engines.ini" then crush
     engine_file = args.engine if args.engine_remote_server is None else args.engine_remote

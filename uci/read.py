@@ -22,7 +22,7 @@ from dgt.api import Dgt
 
 
 def read_engine_ini(engine_shell=None, engine_path=None):
-    """Read engine.ini and creates a library list out of it."""
+    """Read engines.ini and creates a library list out of it."""
     config = configparser.ConfigParser()
     config.optionxform = str
     try:

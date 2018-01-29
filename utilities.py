@@ -204,7 +204,7 @@ def checkout_tag(tag):
     do_popen(['pip3', 'install', '-r', 'requirements.txt'])
 
 
-def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate):
+def update_picochess(dgttranslate: DgtTranslate):
     """Update picochess from git."""
     git = git_name()
 
@@ -220,14 +220,12 @@ def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate)
             logging.debug('updating picochess')
             do_popen([git, 'pull', 'origin', branch])
             do_popen(['pip3', 'install', '-r', 'requirements.txt'])
-            if auto_reboot:
-                reboot(dgtpi, dev='web')
-            else:
-                time.sleep(2)  # give time to display the "update" message
+            return True
         else:
             logging.debug('no update available')
     else:
         logging.warning('wrong branch %s', branch)
+    return False
 
 
 def shutdown(dgtpi: bool, dev: str):

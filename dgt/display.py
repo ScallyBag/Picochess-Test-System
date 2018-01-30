@@ -206,7 +206,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
 
     def _process_lever(self, right_side_down, dev):
         logging.debug('(%s) clock handle lever press - right_side_down: %s', dev, right_side_down)
-        if not self._inside_main_menu():
+        if not self._inside_main_menu() and not self._inside_updt_menu():
             self.play_move = chess.Move.null()
             self.play_fen = None
             self.play_turn = None
@@ -508,7 +508,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         DgtObserver.fire(Dgt.CLOCK_START(side=side, wait=True, devs=devs))
 
     def _display_confirm(self, text_key):
-        if not self.low_time and not self.dgtmenu.get_confirm():  # only display if the user has >60sec on his clock
+        if not self.low_time and not self.dgtmenu.get_confirm():  # only display if players have >60sec on their clocks
             DgtObserver.fire(self.dgttranslate.text(text_key))
 
     def _process_computer_move_done(self):

@@ -225,7 +225,7 @@ class DgtMenu(object):
         try:
             self.updt_version = [item[1] for item in self.updt_tags].index(version)
         except ValueError:
-            self.updt_version = len(self.updt_tags) - 1
+            self.updt_version = 0  # set index to newest release
 
     def inside_picochess_time(self, dev):
         """Picochess displayed on clock."""

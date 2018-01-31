@@ -1,12 +1,12 @@
 PicoChess Engines
-January 01, 2018
+January 31, 2018
 
 
 1. STOCKFISH
 ===========================
 Authors: T. Romstad, M. Costalba, J. Kiiski, G. Linscott
-Version: 8
-Date: October 2017
+Version: 9
+Date: January 2018
 Elo: 3360
 Levels: yes
 Chess960: yes

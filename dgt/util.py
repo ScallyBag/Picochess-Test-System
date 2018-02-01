@@ -30,57 +30,90 @@ class MyEnum(enum.Enum):
 
 
 @enum.unique
-class Top(MyEnum):
+class UpdtTop(MyEnum):
 
-    """Top Class."""
+    """UpdtTop Class."""
 
-    MODE = 'B00_top_mode_menu'  # Mode Menu
-    POSITION = 'B00_top_position_menu'  # Setup position menu
-    TIME = 'B00_top_time_menu'  # Time controls menu
-    BOOK = 'B00_top_book_menu'  # Book menu
-    ENGINE = 'B00_top_engine_menu'  # Engine menu
-    SYSTEM = 'B00_top_system_menu'  # Settings menu
+    UPDATE = 'B00_top_update_menu'  # Update Menu
+    LOG = 'B00_top_log_menu'  # Log menu
 
 
-class TopLoop(object):
+class UpdtTopLoop(object):
 
-    """TopLoop Class."""
+    """UpdtTopLoop Class."""
 
     def __init__(self):
-        super(TopLoop, self).__init__()
+        super(UpdtTopLoop, self).__init__()
 
     @staticmethod
-    def next(item: Top):
+    def next(item: UpdtTop):
         """Get next item."""
-        if item == Top.MODE:
-            return Top.POSITION
-        elif item == Top.POSITION:
-            return Top.TIME
-        elif item == Top.TIME:
-            return Top.BOOK
-        elif item == Top.BOOK:
-            return Top.ENGINE
-        elif item == Top.ENGINE:
-            return Top.SYSTEM
-        elif item == Top.SYSTEM:
-            return Top.MODE
+        if item == UpdtTop.UPDATE:
+            return UpdtTop.LOG
+        if item == UpdtTop.LOG:
+            return UpdtTop.UPDATE
+
+    @staticmethod
+    def prev(item: UpdtTop):
+        """Get previous item."""
+        if item == UpdtTop.UPDATE:
+            return UpdtTop.LOG
+        if item == UpdtTop.LOG:
+            return UpdtTop.UPDATE
+
+
+@enum.unique
+class MainTop(MyEnum):
+
+    """MainTop Class."""
+
+    MODE = 'B00_top_mode_menu'  # Mode Menu
+    POSITION = 'B00_top_position_menu'  # Position menu
+    TIME = 'B00_top_time_menu'  # Time menu
+    BOOK = 'B00_top_book_menu'  # Book menu
+    ENGINE = 'B00_top_engine_menu'  # Engine menu
+    SYSTEM = 'B00_top_system_menu'  # System menu
+
+
+class MainTopLoop(object):
+
+    """MainTopLoop Class."""
+
+    def __init__(self):
+        super(MainTopLoop, self).__init__()
+
+    @staticmethod
+    def next(item: MainTop):
+        """Get next item."""
+        if item == MainTop.MODE:
+            return MainTop.POSITION
+        elif item == MainTop.POSITION:
+            return MainTop.TIME
+        elif item == MainTop.TIME:
+            return MainTop.BOOK
+        elif item == MainTop.BOOK:
+            return MainTop.ENGINE
+        elif item == MainTop.ENGINE:
+            return MainTop.SYSTEM
+        elif item == MainTop.SYSTEM:
+            return MainTop.MODE
         return 'errMenuNext'
 
     @staticmethod
-    def prev(item: Top):
+    def prev(item: MainTop):
         """Get previous item."""
-        if item == Top.MODE:
-            return Top.SYSTEM
-        elif item == Top.POSITION:
-            return Top.MODE
-        elif item == Top.TIME:
-            return Top.POSITION
-        elif item == Top.BOOK:
-            return Top.TIME
-        elif item == Top.ENGINE:
-            return Top.BOOK
-        elif item == Top.SYSTEM:
-            return Top.ENGINE
+        if item == MainTop.MODE:
+            return MainTop.SYSTEM
+        elif item == MainTop.POSITION:
+            return MainTop.MODE
+        elif item == MainTop.TIME:
+            return MainTop.POSITION
+        elif item == MainTop.BOOK:
+            return MainTop.TIME
+        elif item == MainTop.ENGINE:
+            return MainTop.BOOK
+        elif item == MainTop.SYSTEM:
+            return MainTop.ENGINE
         return 'errMenuPrev'
 
 

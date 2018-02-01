@@ -125,8 +125,11 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             else:
                 self._exit_display()
         elif self._inside_updt_menu():
-            self.dgtmenu.updt_up(dev)
-            self._exit_display()  # button0 always exit the menu
+            text = self.dgtmenu.updt_up(dev)  # button0 can exit the menu, so check
+            if text:
+                DgtObserver.fire(text)
+            else:
+                self._exit_display()
         else:
             if self.last_move:
                 side = self._get_clock_side(self.last_turn)
@@ -155,12 +158,14 @@ class DgtDisplay(MsgDisplay, threading.Thread):
 
     def _process_button2(self, dev):
         logging.debug('(%s) clock handle button 2 press', dev)
-        if self._inside_main_menu() or self.dgtmenu.inside_picochess_time(dev):
-            text = self.dgtmenu.main_middle(dev)  # button2 can exit the menu (if in "position"), so check
+        if self._inside_main_menu():
+            text = self.dgtmenu.main_middle()  # button2 can exit the menu (if in "position"), so check
             if text:
                 DgtObserver.fire(text)
             else:
                 EvtObserver.fire(Event.EXIT_MENU())
+        elif self._inside_updt_menu() or self.dgtmenu.inside_picochess_time(dev):
+            DgtObserver.fire(self.dgtmenu.updt_middle(dev))
         else:
             if self.dgtmenu.get_mode() in (Mode.ANALYSIS, Mode.KIBITZ, Mode.PONDER):
                 DgtObserver.fire(self.dgttranslate.text('B00_nofunction'))
@@ -195,8 +200,11 @@ class DgtDisplay(MsgDisplay, threading.Thread):
     def _process_button4(self, dev):
         logging.debug('(%s) clock handle button 4 press', dev)
         if self._inside_updt_menu():
-            tag = self.dgtmenu.updt_down(dev)
-            EvtObserver.fire(Event.UPDATE_PICO(tag=tag))
+            text = self.dgtmenu.updt_down(dev)  # button4 can exit the menu, so check
+            if text:
+                DgtObserver.fire(text)
+            else:
+                EvtObserver.fire(Event.EXIT_MENU())
         else:
             text = self.dgtmenu.main_down()  # button4 can exit the menu, so check
             if text:

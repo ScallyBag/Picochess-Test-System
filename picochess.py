@@ -1132,9 +1132,7 @@ def main():
                 MsgDisplay.show(Message.EXIT_MENU())
 
             elif isinstance(event, Event.UPDATE_PICO):
-                MsgDisplay.show(Message.UPDATE_PICO())
                 checkout_tag(event.tag)
-                MsgDisplay.show(Message.EXIT_MENU())
 
             elif isinstance(event, Event.REMOTE_ROOM):
                 MsgDisplay.show(Message.REMOTE_ROOM(inside=event.inside))

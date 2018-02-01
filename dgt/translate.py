@@ -783,7 +783,6 @@ class DgtTranslate(object):
             estxt = Dgt.DISPLAY_TEXT(l='PicoChs Voz', m='Pico Voz', s='pico v')
             ittxt = Dgt.DISPLAY_TEXT(l='PicoChsVoce', m='PicoVoce', s='pico v')
         if text_id == 'okvoice':
-            # wait = True
             entxt = Dgt.DISPLAY_TEXT(l='ok Voice   ', m='ok Voice', s='ok voc')
             detxt = Dgt.DISPLAY_TEXT(l='ok Stimme  ', m='okStimme', s='ok stm')
             nltxt = Dgt.DISPLAY_TEXT(l='ok Stem    ', m='ok Stem ', s='okstem')
@@ -946,7 +945,6 @@ class DgtTranslate(object):
             estxt = Dgt.DISPLAY_TEXT(l='actualizoPc', m='actualiz', s='actual')
             ittxt = Dgt.DISPLAY_TEXT(l='aggiornare ', m='aggiorPc', s='aggior')
         if text_id == 'updt_version':
-            wait = True
             entxt = Dgt.DISPLAY_TEXT(l='Version ' + msg, m='Vers ' + msg, s='ver' + msg)
             detxt = Dgt.DISPLAY_TEXT(l='Version ' + msg, m='Vers ' + msg, s='ver' + msg)
             nltxt = Dgt.DISPLAY_TEXT(l='Versie  ' + msg, m='Vers ' + msg, s='ver' + msg)
@@ -960,6 +958,20 @@ class DgtTranslate(object):
             frtxt = Dgt.DISPLAY_TEXT(l='batterie' + msg, m='battr' + msg, s='bat' + msg)
             estxt = Dgt.DISPLAY_TEXT(l='bateria ' + msg, m='battr' + msg, s='bat' + msg)
             ittxt = Dgt.DISPLAY_TEXT(l='batteria' + msg, m='battr' + msg, s='bat' + msg)
+        if text_id == 'top_update_menu':
+            entxt = Dgt.DISPLAY_TEXT(l='Update pico', m='Upd pico', s='update')
+            detxt = entxt
+            nltxt = entxt
+            frtxt = Dgt.DISPLAY_TEXT(l='actualisePc', m='actualis', s='actual')
+            estxt = Dgt.DISPLAY_TEXT(l='actualizoPc', m='actualiz', s='actual')
+            ittxt = Dgt.DISPLAY_TEXT(l='aggiornare ', m='aggiorPc', s='aggior')
+        if text_id == 'top_log_menu':
+            entxt = Dgt.DISPLAY_TEXT(l='Log file   ', m='Log file', s='logfil')
+            detxt = entxt
+            nltxt = entxt
+            frtxt = entxt
+            estxt = entxt
+            ittxt = entxt
 
         for txt in [entxt, detxt, nltxt, frtxt, estxt, ittxt]:
             if txt:

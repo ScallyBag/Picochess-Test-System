@@ -50,16 +50,18 @@ class UpdtTopLoop(object):
         """Get next item."""
         if item == UpdtTop.UPDATE:
             return UpdtTop.LOG
-        if item == UpdtTop.LOG:
+        elif item == UpdtTop.LOG:
             return UpdtTop.UPDATE
+        return 'errUpdtNext'
 
     @staticmethod
     def prev(item: UpdtTop):
         """Get previous item."""
         if item == UpdtTop.UPDATE:
             return UpdtTop.LOG
-        if item == UpdtTop.LOG:
+        elif item == UpdtTop.LOG:
             return UpdtTop.UPDATE
+        return 'errUpdtNext'
 
 
 @enum.unique
@@ -97,7 +99,7 @@ class MainTopLoop(object):
             return MainTop.SYSTEM
         elif item == MainTop.SYSTEM:
             return MainTop.MODE
-        return 'errMenuNext'
+        return 'errMainNext'
 
     @staticmethod
     def prev(item: MainTop):
@@ -114,7 +116,7 @@ class MainTopLoop(object):
             return MainTop.BOOK
         elif item == MainTop.SYSTEM:
             return MainTop.ENGINE
-        return 'errMenuPrev'
+        return 'errMainPrev'
 
 
 @enum.unique
@@ -211,7 +213,7 @@ class TimeModeLoop(object):
             return TimeMode.FISCHER
         elif item == TimeMode.FISCHER:
             return TimeMode.FIXED
-        return 'errTiMoNext'
+        return 'errTimeNext'
 
     @staticmethod
     def prev(item: TimeMode):
@@ -222,7 +224,7 @@ class TimeModeLoop(object):
             return TimeMode.FIXED
         elif item == TimeMode.FISCHER:
             return TimeMode.BLITZ
-        return 'errTiMoPrev'
+        return 'errTimePrev'
 
 
 class System(MyEnum):
@@ -232,7 +234,6 @@ class System(MyEnum):
     INFO = 'B00_system_info_menu'
     SOUND = 'B00_system_sound_menu'
     LANGUAGE = 'B00_system_language_menu'
-    LOGFILE = 'B00_system_logfile_menu'
     VOICE = 'B00_system_voice_menu'
     DISPLAY = 'B00_system_display_menu'
 
@@ -252,8 +253,6 @@ class SystemLoop(object):
         elif item == System.SOUND:
             return System.LANGUAGE
         elif item == System.LANGUAGE:
-            return System.LOGFILE
-        elif item == System.LOGFILE:
             return System.VOICE
         elif item == System.VOICE:
             return System.DISPLAY
@@ -269,8 +268,6 @@ class SystemLoop(object):
         if item == System.DISPLAY:
             return System.VOICE
         if item == System.VOICE:
-            return System.LOGFILE
-        if item == System.LOGFILE:
             return System.LANGUAGE
         if item == System.LANGUAGE:
             return System.SOUND

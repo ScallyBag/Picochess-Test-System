@@ -69,7 +69,6 @@ class MainMenuState(object):
     SYS_SOUND_BEEP = 721000  # never, always, some
     SYS_LANG = 730000
     SYS_LANG_NAME = 731000  # de, en, ...
-    SYS_LOG = 740000
     SYS_VOICE = 750000
     SYS_VOICE_USER = 751000  # user
     SYS_VOICE_USER_MUTE = 751100  # on, off
@@ -603,12 +602,6 @@ class DgtMenu(object):
         text = self.dgttranslate.text(self.mainmenu_system_language.value)
         return text
 
-    def enter_mainmenu_sys_log(self):
-        """Set the menu state."""
-        self.mainmenu_state = MainMenuState.SYS_LOG
-        text = self.dgttranslate.text(self.mainmenu_system.value)
-        return text
-
     def enter_mainmenu_sys_voice(self):
         """Set the menu state."""
         self.mainmenu_state = MainMenuState.SYS_VOICE
@@ -859,9 +852,6 @@ class DgtMenu(object):
         elif self.mainmenu_state == MainMenuState.SYS_LANG_NAME:
             text = self.enter_mainmenu_sys_lang()
 
-        elif self.mainmenu_state == MainMenuState.SYS_LOG:
-            text = self.enter_mainmenu_sys()
-
         elif self.mainmenu_state == MainMenuState.SYS_VOICE:
             text = self.enter_mainmenu_sys()
 
@@ -1073,8 +1063,6 @@ class DgtMenu(object):
                 text = self.enter_mainmenu_sys_sound()
             if self.mainmenu_system == System.LANGUAGE:
                 text = self.enter_mainmenu_sys_lang()
-            if self.mainmenu_system == System.LOGFILE:
-                text = self.enter_mainmenu_sys_log()
             if self.mainmenu_system == System.VOICE:
                 text = self.enter_mainmenu_sys_voice()
             if self.mainmenu_system == System.DISPLAY:
@@ -1136,14 +1124,6 @@ class DgtMenu(object):
             self.dgttranslate.set_language(language)
             write_picochess_ini('language', language)
             text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklang'))
-
-        elif self.mainmenu_state == MainMenuState.SYS_LOG:
-            # do action!
-            if self.log_file:
-                EvtObserver.fire(Event.EMAIL_LOG())
-                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklogfile'))
-            else:
-                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_nofunction'))
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE:
             if self.mainmenu_system_voice == Voice.USER:
@@ -1433,13 +1413,8 @@ class DgtMenu(object):
             self.mainmenu_system_language = LanguageLoop.prev(self.mainmenu_system_language)
             text = self.dgttranslate.text(self.mainmenu_system_language.value)
 
-        elif self.mainmenu_state == MainMenuState.SYS_LOG:
-            self.mainmenu_state = MainMenuState.SYS_LANG
-            self.mainmenu_system = SystemLoop.prev(self.mainmenu_system)
-            text = self.dgttranslate.text(self.mainmenu_system.value)
-
         elif self.mainmenu_state == MainMenuState.SYS_VOICE:
-            self.mainmenu_state = MainMenuState.SYS_LOG
+            self.mainmenu_state = MainMenuState.SYS_LANG
             self.mainmenu_system = SystemLoop.prev(self.mainmenu_system)
             text = self.dgttranslate.text(self.mainmenu_system.value)
 
@@ -1676,18 +1651,13 @@ class DgtMenu(object):
             text = self.dgttranslate.text(self.mainmenu_system_sound.value)
 
         elif self.mainmenu_state == MainMenuState.SYS_LANG:
-            self.mainmenu_state = MainMenuState.SYS_LOG
+            self.mainmenu_state = MainMenuState.SYS_VOICE
             self.mainmenu_system = SystemLoop.next(self.mainmenu_system)
             text = self.dgttranslate.text(self.mainmenu_system.value)
 
         elif self.mainmenu_state == MainMenuState.SYS_LANG_NAME:
             self.mainmenu_system_language = LanguageLoop.next(self.mainmenu_system_language)
             text = self.dgttranslate.text(self.mainmenu_system_language.value)
-
-        elif self.mainmenu_state == MainMenuState.SYS_LOG:
-            self.mainmenu_state = MainMenuState.SYS_VOICE
-            self.mainmenu_system = SystemLoop.next(self.mainmenu_system)
-            text = self.dgttranslate.text(self.mainmenu_system.value)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE:
             self.mainmenu_state = MainMenuState.SYS_DISP

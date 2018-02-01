@@ -139,7 +139,6 @@ class MessageApi():
     EXIT_MENU = 'MSG_EXIT_MENU'  # User exits the menu
     WRONG_FEN = 'MSG_WRONG_FEN'  # User sends a wrong placement of pieces (timed)
     BATTERY_BT = 'MSG_BATTERY_BT'  # percent of BT battery
-    UPDATE_PICO = 'MSG_UPDATE'  # User wants to update picochess
     REMOTE_ROOM = 'MSG_REMOTE_ROOM'  # User enters/leaves a remote room
 
 
@@ -231,7 +230,6 @@ class Message():
     EXIT_MENU = ClassFactory(MessageApi.EXIT_MENU, [])
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
     BATTERY_BT = ClassFactory(MessageApi.BATTERY_BT, ['percent'])
-    UPDATE_PICO = ClassFactory(MessageApi.UPDATE_PICO, [])
     REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['inside'])
 
 

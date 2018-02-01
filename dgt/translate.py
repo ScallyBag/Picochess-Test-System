@@ -546,13 +546,6 @@ class DgtTranslate(object):
             frtxt = Dgt.DISPLAY_TEXT(l='Langue     ', m='Langue  ', s='langue')
             estxt = Dgt.DISPLAY_TEXT(l='Idioma     ', m='Idioma  ', s='idioma')
             ittxt = Dgt.DISPLAY_TEXT(l='Lingua     ', m='Lingua  ', s='lingua')
-        if text_id == 'system_logfile_menu':
-            entxt = Dgt.DISPLAY_TEXT(l='Log file   ', m='Log file', s='logfil')
-            detxt = entxt
-            nltxt = entxt
-            frtxt = entxt
-            estxt = entxt
-            ittxt = entxt
         if text_id == 'system_info_menu':
             entxt = Dgt.DISPLAY_TEXT(l='Information', m='Informat', s='inform')
             detxt = Dgt.DISPLAY_TEXT(l='Information', m='Informat', s='inform')

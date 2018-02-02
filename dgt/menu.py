@@ -227,15 +227,16 @@ class DgtMenu(object):
         """Check if currently inside the MainMenu."""
         return self.mainmenu_state != MainMenuState.TOP
 
-    def inside_updt_menu(self):
+    def inside_updt_menu(self, dev=''):
         """Check if currently inside the UpdtMenu."""
-        return self.updtmenu_state != UpdtMenuState.TOP
+        not_inside = dev not in self.updtmenu_devs  # if device given it must be inside
+        return self.updtmenu_state != UpdtMenuState.TOP and not_inside
 
-    def disable_picochess_displayed(self, dev):
+    def disable_picochess_displayed(self, dev: str):
         """Disable picochess display."""
         self.picochess_displayed.discard(dev)
 
-    def enable_picochess_displayed(self, dev):
+    def enable_picochess_displayed(self, dev: str):
         """Enable picochess display."""
         self.picochess_displayed.add(dev)
         self.updtmenu_tags = get_tags()
@@ -244,7 +245,7 @@ class DgtMenu(object):
         except ValueError:
             self.updtmenu_version = 0  # set index to newest release
 
-    def inside_picochess_time(self, dev):
+    def inside_picochess_time(self, dev: str):
         """Picochess displayed on clock."""
         return dev in self.picochess_displayed
 
@@ -375,7 +376,7 @@ class DgtMenu(object):
         """Get the flag."""
         return self.res_time_fisch
 
-    def set_position_reverse_flipboard(self, flip_board):
+    def set_position_reverse_flipboard(self, flip_board: bool):
         """Set the flag."""
         self.res_position_reverse = self.flip_board = flip_board
 
@@ -744,7 +745,7 @@ class DgtMenu(object):
         EvtObserver.fire(event)
         return self.save_choices()
 
-    def _fire_dispatchdgt(self, text):
+    def _fire_dispatchdgt(self, text: Dgt):
         DgtObserver.fire(text)
         return self.save_choices()
 
@@ -1848,7 +1849,7 @@ class DgtMenu(object):
         self.current_text = text
         return text
 
-    def updt_down(self, dev):
+    def updt_down(self, dev: str):
         """Change the menu state after DOWN action."""
         text = self.dgttranslate.text('Y00_errormenu')
         if False:  # switch-case
@@ -1875,7 +1876,7 @@ class DgtMenu(object):
         self.current_text = text
         return text
 
-    def updt_up(self, dev):
+    def updt_up(self, dev: str):
         """Change the menu state after UP action."""
         text = self.dgttranslate.text('Y00_errormenu')
         if False:  # switch-case
@@ -1896,7 +1897,7 @@ class DgtMenu(object):
         self.current_text = text
         return text
 
-    def updt_middle(self, dev):
+    def updt_middle(self, dev: str):
         """Change the menu state after MIDDLE action."""
         self.updtmenu_devs.add(dev)
         text = self.dgttranslate.text('B00_nofunction')

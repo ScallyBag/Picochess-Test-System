@@ -54,7 +54,7 @@ class Dispatcher(DgtObserver, Thread):
         self.tasks[device] = []
         self.display_hash[device] = None
 
-    def is_prio_device(self, dev, connect):
+    def is_prio_device(self, dev: str, connect: bool):
         """Return the most prio registered device."""
         logging.debug('(%s) clock connected: %s', dev, connect)
         if not connect:
@@ -120,7 +120,7 @@ class Dispatcher(DgtObserver, Thread):
                 if repr(message) == DgtApi.DISPLAY_TEXT:
                     if message.maxtime == 2.1:  # 2.1=picochess message
                         self.dgtmenu.enable_picochess_displayed(dev)
-                    if self.dgtmenu.inside_updt_menu():
+                    if self.dgtmenu.inside_updt_menu(dev):
                         if message.maxtime == 0.1:  # 0.1=eBoard error
                             logging.debug('(%s) inside update menu => board errors not displayed', dev)
                             return
@@ -132,7 +132,7 @@ class Dispatcher(DgtObserver, Thread):
                     self.maxtimer[dev].start()
                     logging.debug('(%s) showing %s for %.1f secs', dev, message, message.maxtime * self.time_factor)
                     self.maxtimer_running[dev] = True
-            if repr(message) == DgtApi.CLOCK_START and self.dgtmenu.inside_updt_menu():
+            if repr(message) == DgtApi.CLOCK_START and self.dgtmenu.inside_updt_menu(dev):
                 logging.debug('(%s) inside update menu => clock not started', dev)
                 return
             message.devs = {dev}  # on new system, we only have ONE device each message - force this!
@@ -140,7 +140,7 @@ class Dispatcher(DgtObserver, Thread):
         else:
             logging.debug('(%s) hash ignore DgtApi: %s', dev, message)
 
-    def stop_maxtimer(self, dev):
+    def stop_maxtimer(self, dev: str):
         """Stop the maxtimer."""
         if self.maxtimer_running[dev]:
             self.maxtimer[dev].cancel()

@@ -120,6 +120,7 @@ class DgtMenu(object):
         self.log_file = log_file
         self.remote_engine = bool(engine_server)
         self.dgttranslate = dgttranslate
+        self.mainmenu_devs = set()  # list of devices which are inside the main-menu
         self.mainmenu_state = MainMenuState.TOP
 
         self.dgt_fen = '8/8/8/8/8/8/8/8'
@@ -211,7 +212,7 @@ class DgtMenu(object):
             ('rnbqkbnr/pppppppp/8/8/8/6Q1/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=60, fischer=20)),
             ('rnbqkbnr/pppppppp/8/8/8/7Q/PPPPPPPP/RNBQKBNR', TimeControl(TimeMode.FISCHER, blitz=90, fischer=30))])
         # setup the result vars for api (dgtdisplay)
-        self.save_choices()
+        self.save_choices('dont_care_dev')
         # During "picochess" is displayed, some special actions allowed
         self.picochess_displayed = set()
         self.updtmenu_state = UpdtMenuState.TOP
@@ -223,11 +224,12 @@ class DgtMenu(object):
         self.battery = '-NA'  # standard value: NotAvailable (discharging)
         self.inside_room = False
 
-    def inside_main_menu(self):
+    def inside_main_menu(self, dev='dont_care_dev'):
         """Check if currently inside the MainMenu."""
-        return self.mainmenu_state != MainMenuState.TOP
+        not_inside = dev not in self.updtmenu_devs  # if device given it must be inside
+        return self.mainmenu_state != MainMenuState.TOP and not_inside
 
-    def inside_updt_menu(self, dev=''):
+    def inside_updt_menu(self, dev='dont_care_dev'):
         """Check if currently inside the UpdtMenu."""
         not_inside = dev not in self.updtmenu_devs  # if device given it must be inside
         return self.updtmenu_state != UpdtMenuState.TOP and not_inside
@@ -249,7 +251,7 @@ class DgtMenu(object):
         """Picochess displayed on clock."""
         return dev in self.picochess_displayed
 
-    def save_choices(self):
+    def save_choices(self, dev: str):
         """Save the user choices to the result vars."""
         self.mainmenu_state = MainMenuState.TOP
         self.updtmenu_state = UpdtMenuState.TOP
@@ -274,6 +276,8 @@ class DgtMenu(object):
         self.res_system_display_ponderinterval = self.mainmenu_system_display_ponderinterval
         self.dgttranslate.set_capital(self.mainmenu_system_display_capital)
         self.dgttranslate.set_notation(self.mainmenu_system_display_notation)
+
+        self.mainmenu_devs.discard(dev)
         return False
 
     def set_engine_restart(self, flag: bool):
@@ -535,7 +539,7 @@ class DgtMenu(object):
         self.mainmenu_state = MainMenuState.ENG_NAME
         return self._get_current_engine_name()
 
-    def enter_mainmenu_eng_name_level(self):
+    def enter_mainmenu_eng_name_level(self, dev):
         """Set the menu state."""
         self.mainmenu_state = MainMenuState.ENG_NAME_LEVEL
         eng = self.installed_engines[self.mainmenu_engine_name]
@@ -546,7 +550,7 @@ class DgtMenu(object):
             msg = sorted(level_dict)[self.mainmenu_engine_level]
             text = self.dgttranslate.text('B00_level', msg)
         else:
-            text = self.save_choices()
+            text = self.save_choices(dev)
         return text
 
     def enter_mainmenu_sys(self):
@@ -741,18 +745,18 @@ class DgtMenu(object):
         text = self.dgttranslate.text('B00_notation_' + msg)
         return text
 
-    def _fire_event(self, event: Event):
+    def _fire_event(self, event: Event, dev: str):
         EvtObserver.fire(event)
-        return self.save_choices()
+        return self.save_choices(dev)
 
-    def _fire_dispatchdgt(self, text: Dgt):
+    def _fire_dispatchdgt(self, text: Dgt, dev: str):
         DgtObserver.fire(text)
-        return self.save_choices()
+        return self.save_choices(dev)
 
-    def _fire_timectrl(self, timectrl: TimeControl):
+    def _fire_timectrl(self, timectrl: TimeControl, dev: str):
         time_text = self.dgttranslate.text('B10_oktime')
         event = Event.TIME_CONTROL(tc_init=timectrl.get_parameters(), time_text=time_text, show_ok=True)
-        return self._fire_event(event)
+        return self._fire_event(event, dev)
 
     def exit_menu(self):
         """Exit the menu."""
@@ -918,7 +922,7 @@ class DgtMenu(object):
         self.current_text = text
         return text
 
-    def main_down(self):
+    def main_down(self, dev: str):
         """Change the menu state after DOWN action."""
         text = self.dgttranslate.text('Y00_errormenu')
         if False:  # switch-case
@@ -936,6 +940,7 @@ class DgtMenu(object):
                 text = self.enter_mainmenu_eng()
             if self.mainmenu_top == MainTop.SYSTEM:
                 text = self.enter_mainmenu_sys()
+            self.mainmenu_devs.add(dev)
 
         elif self.mainmenu_state == MainMenuState.MODE:
             text = self.enter_mainmenu_mode_type()
@@ -950,7 +955,7 @@ class DgtMenu(object):
             else:
                 mode_text = self.dgttranslate.text('B10_okmode')
                 event = Event.INTERACTION_MODE(mode=self.mainmenu_mode, mode_text=mode_text, show_ok=True)
-                text = self._fire_event(event)
+                text = self._fire_event(event, dev)
 
         elif self.mainmenu_state == MainMenuState.POS:
             text = self.enter_mainmenu_pos_color()
@@ -979,7 +984,7 @@ class DgtMenu(object):
                 event = Event.SETUP_POSITION(fen=bit_board.fen(), uci960=self.mainmenu_position_uci960)
                 EvtObserver.fire(event)
                 # self._reset_moves_and_score() done in "START_NEW_GAME"
-                text = self.save_choices()
+                text = self.save_choices(dev)
             else:
                 logging.debug('illegal fen %s', fen)
                 DgtObserver.fire(self.dgttranslate.text('Y10_illegalpos'))
@@ -999,21 +1004,21 @@ class DgtMenu(object):
 
         elif self.mainmenu_state == MainMenuState.TIME_BLITZ_CTRL:
             # do action!
-            text = self._fire_timectrl(self.tc_blitz_map[list(self.tc_blitz_map)[self.mainmenu_time_blitz]])
+            text = self._fire_timectrl(self.tc_blitz_map[list(self.tc_blitz_map)[self.mainmenu_time_blitz]], dev)
 
         elif self.mainmenu_state == MainMenuState.TIME_FISCH:
             text = self.enter_mainmenu_time_fisch_ctrl()
 
         elif self.mainmenu_state == MainMenuState.TIME_FISCH_CTRL:
             # do action!
-            text = self._fire_timectrl(self.tc_fisch_map[list(self.tc_fisch_map)[self.mainmenu_time_fisch]])
+            text = self._fire_timectrl(self.tc_fisch_map[list(self.tc_fisch_map)[self.mainmenu_time_fisch]], dev)
 
         elif self.mainmenu_state == MainMenuState.TIME_FIXED:
             text = self.enter_mainmenu_time_fixed_ctrl()
 
         elif self.mainmenu_state == MainMenuState.TIME_FIXED_CTRL:
             # do action!
-            text = self._fire_timectrl(self.tc_fixed_map[list(self.tc_fixed_map)[self.mainmenu_time_fixed]])
+            text = self._fire_timectrl(self.tc_fixed_map[list(self.tc_fixed_map)[self.mainmenu_time_fixed]], dev)
 
         elif self.mainmenu_state == MainMenuState.BOOK:
             text = self.enter_mainmenu_book_name()
@@ -1022,14 +1027,14 @@ class DgtMenu(object):
             # do action!
             book_text = self.dgttranslate.text('B10_okbook')
             event = Event.NEW_BOOK(book=self.all_books[self.mainmenu_book], book_text=book_text, show_ok=True)
-            text = self._fire_event(event)
+            text = self._fire_event(event, dev)
 
         elif self.mainmenu_state == MainMenuState.ENG:
             text = self.enter_mainmenu_eng_name()
 
         elif self.mainmenu_state == MainMenuState.ENG_NAME:
             # maybe do action!
-            text = self.enter_mainmenu_eng_name_level()
+            text = self.enter_mainmenu_eng_name_level(dev)
             if not text:
                 if not self.remote_engine:
                     write_picochess_ini('engine-level', None)
@@ -1054,7 +1059,7 @@ class DgtMenu(object):
                 options = {}
             eng_text = self.dgttranslate.text('B10_okengine')
             event = Event.NEW_ENGINE(eng=eng, eng_text=eng_text, options=options, show_ok=True)
-            text = self._fire_event(event)
+            text = self._fire_event(event, dev)
             self.engine_restart = True
 
         elif self.mainmenu_state == MainMenuState.SYS:
@@ -1082,7 +1087,7 @@ class DgtMenu(object):
             text = self.dgttranslate.text('B10_picochess')
             text.rd = ClockIcons.DOT
             text.wait = False
-            text = self._fire_dispatchdgt(text)
+            text = self._fire_dispatchdgt(text, dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_INFO_IP:
             # do action!
@@ -1099,11 +1104,11 @@ class DgtMenu(object):
                 text.wait = True
             else:
                 text = self.dgttranslate.text('B10_noipadr')
-            text = self._fire_dispatchdgt(text)
+            text = self._fire_dispatchdgt(text, dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_INFO_BATTERY:
             # do action!
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_bat_percent', self.battery))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_bat_percent', self.battery), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_SOUND:
             text = self.enter_mainmenu_sys_sound_beep()
@@ -1112,7 +1117,7 @@ class DgtMenu(object):
             # do action!
             self.dgttranslate.set_beep(self.mainmenu_system_sound)
             write_picochess_ini('beep-config', self.dgttranslate.beep_to_config(self.mainmenu_system_sound))
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okbeep'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okbeep'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_LANG:
             text = self.enter_mainmenu_sys_lang_name()
@@ -1124,7 +1129,7 @@ class DgtMenu(object):
             language = langs[self.mainmenu_system_language]
             self.dgttranslate.set_language(language)
             write_picochess_ini('language', language)
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklang'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklang'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE:
             if self.mainmenu_system_voice == Voice.USER:
@@ -1153,7 +1158,7 @@ class DgtMenu(object):
                     config.write()
                 event = Event.NEW_VOICE(type=self.mainmenu_system_voice, lang='en', speaker='mute', speed=2)
                 EvtObserver.fire(event)
-                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
+                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE_USER_MUTE_LANG:
             text = self.enter_mainmenu_sys_voice_user_mute_lang_speak()
@@ -1169,7 +1174,7 @@ class DgtMenu(object):
             event = Event.NEW_VOICE(type=self.mainmenu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.mainmenu_system_voice_speedfactor)
             EvtObserver.fire(event)
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE_COMP_MUTE:
             # maybe do action!
@@ -1182,7 +1187,7 @@ class DgtMenu(object):
                     config.write()
                 event = Event.NEW_VOICE(type=self.mainmenu_system_voice, lang='en', speaker='mute', speed=2)
                 EvtObserver.fire(event)
-                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
+                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE_COMP_MUTE_LANG:
             text = self.enter_mainmenu_sys_voice_comp_mute_lang_speak()
@@ -1198,7 +1203,7 @@ class DgtMenu(object):
             event = Event.NEW_VOICE(type=self.mainmenu_system_voice, lang=vkey, speaker=skey,
                                     speed=self.mainmenu_system_voice_speedfactor)
             EvtObserver.fire(event)
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okvoice'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_VOICE_SPEED:
             self.mainmenu_system_voice = Voice.SPEED
@@ -1211,7 +1216,7 @@ class DgtMenu(object):
             event = Event.NEW_VOICE(type=self.mainmenu_system_voice, lang='en', speaker='mute',  # lang & speaker ignored
                                     speed=self.mainmenu_system_voice_speedfactor)
             EvtObserver.fire(event)
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okspeed'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okspeed'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_DISP:
             if self.mainmenu_system_display == Display.PONDER:
@@ -1234,7 +1239,7 @@ class DgtMenu(object):
             elif 'disable-confirm-message' in config:
                 del config['disable-confirm-message']
             config.write()
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okconfirm'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okconfirm'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_DISP_PONDER:
             text = self.enter_mainmenu_sys_disp_ponder_interval()
@@ -1242,7 +1247,7 @@ class DgtMenu(object):
         elif self.mainmenu_state == MainMenuState.SYS_DISP_PONDER_INTERVAL:
             # do action!
             write_picochess_ini('ponder-interval', self.mainmenu_system_display_ponderinterval)
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okponder'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okponder'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_DISP_CAPITAL:
             text = self.enter_mainmenu_sys_disp_capital_yesno()
@@ -1255,7 +1260,7 @@ class DgtMenu(object):
             elif 'enable-capital-letters' in config:
                 del config['enable-capital-letters']
             config.write()
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okcapital'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_okcapital'), dev)
 
         elif self.mainmenu_state == MainMenuState.SYS_DISP_NOTATION:
             text = self.enter_mainmenu_sys_disp_notation_move()
@@ -1268,7 +1273,7 @@ class DgtMenu(object):
             elif 'disable-short-notation' in config:
                 del config['disable-short-notation']
             config.write()
-            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oknotation'))
+            text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oknotation'), dev)
 
         else:  # Default
             pass
@@ -1767,29 +1772,29 @@ class DgtMenu(object):
         self.current_text = text
         return text
 
-    def main_middle(self):
+    def main_middle(self, dev):
         """Change the menu state after MIDDLE action."""
-        def _exit_position():
+        def _exit_position(dev):
             self.mainmenu_state = MainMenuState.POS_READ
-            return self.main_down()
+            return self.main_down(dev)
 
         text = self.dgttranslate.text('B00_nofunction')
         if False:  # switch-case
             pass
         elif self.mainmenu_state == MainMenuState.POS:
-            text = _exit_position()
+            text = _exit_position(dev)
 
         elif self.mainmenu_state == MainMenuState.POS_COL:
-            text = _exit_position()
+            text = _exit_position(dev)
 
         elif self.mainmenu_state == MainMenuState.POS_REV:
-            text = _exit_position()
+            text = _exit_position(dev)
 
         elif self.mainmenu_state == MainMenuState.POS_UCI:
-            text = _exit_position()
+            text = _exit_position(dev)
 
         elif self.mainmenu_state == MainMenuState.POS_READ:
-            text = _exit_position()
+            text = _exit_position(dev)
 
         else:  # Default
             pass
@@ -1861,13 +1866,17 @@ class DgtMenu(object):
         elif self.updtmenu_state == UpdtMenuState.UPDATE_RELEASE:
             # do action!
             EvtObserver.fire(Event.UPDATE_PICO(tag=self.updtmenu_tags[self.updtmenu_version][0]))
-            text = self._fire_dispatchdgt(self.dgttranslate.text('Y00_update'))
+            DgtObserver.fire(self.dgttranslate.text('Y00_update'))
+            self.updtmenu_devs.discard(dev)
+            text = False
         elif self.updtmenu_state == UpdtMenuState.LOG:
             # maybe do action!
             if self.log_file:
                 self.updtmenu_devs.discard(dev)
                 EvtObserver.fire(Event.EMAIL_LOG())
-                text = self._fire_dispatchdgt(self.dgttranslate.text('B10_oklogfile'))
+                DgtObserver.fire(self.dgttranslate.text('B10_oklogfile'))
+                self.updtmenu_devs.discard(dev)
+                text = False
             else:
                 text = self.dgttranslate.text('B10_nofunction')
         else:  # Default

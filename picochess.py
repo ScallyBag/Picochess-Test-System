@@ -1129,7 +1129,7 @@ def main():
                 MsgDisplay.show(Message.DGT_FEN(fen=event.fen, raw=False))
 
             elif isinstance(event, Event.EXIT_MENU):
-                MsgDisplay.show(Message.EXIT_MENU())
+                MsgDisplay.show(Message.EXIT_MENU(dev=event.dev))
 
             elif isinstance(event, Event.UPDATE_PICO):
                 checkout_tag(event.tag)

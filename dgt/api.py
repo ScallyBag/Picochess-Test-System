@@ -227,7 +227,7 @@ class Message():
     SYSTEM_REBOOT = ClassFactory(MessageApi.SYSTEM_REBOOT, [])
     NEW_VOICE = ClassFactory(MessageApi.NEW_VOICE, ['type', 'lang', 'speaker', 'speed'])
 
-    EXIT_MENU = ClassFactory(MessageApi.EXIT_MENU, [])
+    EXIT_MENU = ClassFactory(MessageApi.EXIT_MENU, ['dev'])
     WRONG_FEN = ClassFactory(MessageApi.WRONG_FEN, [])
     BATTERY_BT = ClassFactory(MessageApi.BATTERY_BT, ['percent'])
     REMOTE_ROOM = ClassFactory(MessageApi.REMOTE_ROOM, ['inside'])
@@ -270,6 +270,6 @@ class Event():
     CLOCK_FLAG = ClassFactory(EventApi.CLOCK_FLAG, ['color'])
     CLOCK_TIME = ClassFactory(EventApi.CLOCK_TIME, ['time_white', 'time_black', 'connect', 'dev'])
     # special events
-    EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, [])
+    EXIT_MENU = ClassFactory(EventApi.EXIT_MENU, ['dev'])
     UPDATE_PICO = ClassFactory(EventApi.UPDATE_PICO, ['tag'])
     REMOTE_ROOM = ClassFactory(EventApi.REMOTE_ROOM, ['inside'])

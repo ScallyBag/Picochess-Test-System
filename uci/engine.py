@@ -253,9 +253,10 @@ class UciEngine(object):
         self.option('UCI_AnalyseMode', analyse)
         self.send()
 
-    def chess960_send(self):
+    def chess960_send(self, flag):
+        """Send UCI_Chess960 flag to engine."""
         if self.has_chess960():
-            self.option('UCI_Chess960', True)  # change True to game.has_chess960_castling_rights() => TakeBack Problem
+            self.option('UCI_Chess960', flag)
         self.send()
 
     def startup(self, options: dict, game: Board, new_game=True):
@@ -278,7 +279,7 @@ class UciEngine(object):
 
         self.level_support = bool(options)
         self.options = options
-        self.chess960_send()
+        self.chess960_send(game.has_chess960_castling_rights())
         if new_game:
             self.newgame(game)
             logging.debug('Loaded engine [%s]', self.get_name())

@@ -193,8 +193,9 @@ def git_name():
 def get_tags():
     """Get the last 3 tags from git."""
     git = git_name()
-    tags = [(tags, tags[1] + tags[-2:]) for tags in do_popen([git, 'tag'], log=False).split('\n')[-4:-1]]
-    return tags  # returns something like [('v0.9l', 09l'), ('v0.9m', '09m'), ('v0.9n', '09n')]
+    cmd = [git, 'for-each-ref', '--count=3', '--sort=-taggerdate', '--format=%(refname:short)', 'refs/tags']
+    tags = [(tags, tags[1] + tags[-2:]) for tags in do_popen(cmd, log=False).split('\n')[:-1]]
+    return tags  # returns something like [('v0.9n', '09n'), ('v0.9m', '09m'), ('v0.9l', 09l')]
 
 
 def checkout_tag(tag):
@@ -204,7 +205,7 @@ def checkout_tag(tag):
     do_popen(['pip3', 'install', '-r', 'requirements.txt'])
 
 
-def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate):
+def update_picochess(dgttranslate: DgtTranslate):
     """Update picochess from git."""
     git = git_name()
 
@@ -220,14 +221,12 @@ def update_picochess(dgtpi: bool, auto_reboot: bool, dgttranslate: DgtTranslate)
             logging.debug('updating picochess')
             do_popen([git, 'pull', 'origin', branch])
             do_popen(['pip3', 'install', '-r', 'requirements.txt'])
-            if auto_reboot:
-                reboot(dgtpi, dev='web')
-            else:
-                time.sleep(2)  # give time to display the "update" message
+            return True
         else:
             logging.debug('no update available')
     else:
         logging.warning('wrong branch %s', branch)
+    return False
 
 
 def shutdown(dgtpi: bool, dev: str):

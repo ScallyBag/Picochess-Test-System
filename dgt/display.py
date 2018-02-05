@@ -113,10 +113,10 @@ class DgtDisplay(MsgDisplay, threading.Thread):
     def _inside_main_menu(self):
         return self.dgtmenu.inside_main_menu()
 
-    def _inside_updt_menu(self):
-        return self.dgtmenu.inside_updt_menu()
+    def _inside_updt_menu(self, dev: str):
+        return self.dgtmenu.inside_updt_menu(dev)
 
-    def _process_button0(self, dev):
+    def _process_button0(self, dev: str):
         logging.debug('(%s) clock handle button 0 press', dev)
         if self._inside_main_menu():
             text = self.dgtmenu.main_up()  # button0 can exit the menu, so check
@@ -124,9 +124,12 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 DgtObserver.fire(text)
             else:
                 self._exit_display()
-        elif self._inside_updt_menu():
-            self.dgtmenu.updt_up(dev)
-            self._exit_display()  # button0 always exit the menu
+        elif self._inside_updt_menu(dev):
+            text = self.dgtmenu.updt_up(dev)  # button0 can exit the menu, so check
+            if text:
+                DgtObserver.fire(text)
+            else:
+                self._exit_display()
         else:
             if self.last_move:
                 side = self._get_clock_side(self.last_turn)
@@ -140,11 +143,11 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             DgtObserver.fire(text)
             self._exit_display()
 
-    def _process_button1(self, dev):
+    def _process_button1(self, dev: str):
         logging.debug('(%s) clock handle button 1 press', dev)
         if self._inside_main_menu():
             DgtObserver.fire(self.dgtmenu.main_left())  # button1 cant exit the menu
-        elif self._inside_updt_menu():
+        elif self._inside_updt_menu(dev):
             DgtObserver.fire(self.dgtmenu.updt_left())  # button1 cant exit the menu
         else:
             text = self._combine_depth_and_score()
@@ -153,14 +156,16 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             DgtObserver.fire(text)
             self._exit_display()
 
-    def _process_button2(self, dev):
+    def _process_button2(self, dev: str):
         logging.debug('(%s) clock handle button 2 press', dev)
-        if self._inside_main_menu() or self.dgtmenu.inside_picochess_time(dev):
-            text = self.dgtmenu.main_middle(dev)  # button2 can exit the menu (if in "position"), so check
+        if self._inside_main_menu():
+            text = self.dgtmenu.main_middle()  # button2 can exit the menu (if in "position"), so check
             if text:
                 DgtObserver.fire(text)
             else:
                 EvtObserver.fire(Event.EXIT_MENU())
+        elif self._inside_updt_menu(dev) or self.dgtmenu.inside_picochess_time(dev):
+            DgtObserver.fire(self.dgtmenu.updt_middle(dev))
         else:
             if self.dgtmenu.get_mode() in (Mode.ANALYSIS, Mode.KIBITZ, Mode.PONDER):
                 DgtObserver.fire(self.dgttranslate.text('B00_nofunction'))
@@ -173,11 +178,11 @@ class DgtDisplay(MsgDisplay, threading.Thread):
                 else:
                     EvtObserver.fire(Event.PAUSE_RESUME())
 
-    def _process_button3(self, dev):
+    def _process_button3(self, dev: str):
         logging.debug('(%s) clock handle button 3 press', dev)
         if self._inside_main_menu():
             DgtObserver.fire(self.dgtmenu.main_right())  # button3 cant exit the menu
-        elif self._inside_updt_menu():
+        elif self._inside_updt_menu(dev):
             DgtObserver.fire(self.dgtmenu.updt_right())  # button3 cant exit the menu
         else:
             if self.hint_move:
@@ -192,11 +197,14 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             DgtObserver.fire(text)
             self._exit_display()
 
-    def _process_button4(self, dev):
+    def _process_button4(self, dev: str):
         logging.debug('(%s) clock handle button 4 press', dev)
-        if self._inside_updt_menu():
-            tag = self.dgtmenu.updt_down(dev)
-            EvtObserver.fire(Event.UPDATE_PICO(tag=tag))
+        if self._inside_updt_menu(dev):
+            text = self.dgtmenu.updt_down(dev)  # button4 can exit the menu, so check
+            if text:
+                DgtObserver.fire(text)
+            else:
+                EvtObserver.fire(Event.EXIT_MENU())
         else:
             text = self.dgtmenu.main_down()  # button4 can exit the menu, so check
             if text:
@@ -204,9 +212,9 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             else:
                 EvtObserver.fire(Event.EXIT_MENU())
 
-    def _process_lever(self, right_side_down, dev):
+    def _process_lever(self, right_side_down: bool, dev: str):
         logging.debug('(%s) clock handle lever press - right_side_down: %s', dev, right_side_down)
-        if not self._inside_main_menu():
+        if not self._inside_main_menu() and not self._inside_updt_menu(dev):
             self.play_move = chess.Move.null()
             self.play_fen = None
             self.play_turn = None
@@ -232,7 +240,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             elif button == -0x40:
                 self._process_lever(right_side_down=False, dev=message.dev)
 
-    def _process_fen(self, fen, raw):
+    def _process_fen(self, fen: str, raw: bool):
         level_map = ('rnbqkbnr/pppppppp/8/q7/8/8/PPPPPPPP/RNBQKBNR',
                      'rnbqkbnr/pppppppp/8/1q6/8/8/PPPPPPPP/RNBQKBNR',
                      'rnbqkbnr/pppppppp/8/2q5/8/8/PPPPPPPP/RNBQKBNR',
@@ -507,8 +515,8 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         DgtObserver.fire(Dgt.CLOCK_SET(time_left=time_left, time_right=time_right, devs=devs))
         DgtObserver.fire(Dgt.CLOCK_START(side=side, wait=True, devs=devs))
 
-    def _display_confirm(self, text_key):
-        if not self.low_time and not self.dgtmenu.get_confirm():  # only display if the user has >60sec on his clock
+    def _display_confirm(self, text_key: str):
+        if not self.low_time and not self.dgtmenu.get_confirm():  # only display if players have >60sec on their clocks
             DgtObserver.fire(self.dgttranslate.text(text_key))
 
     def _process_computer_move_done(self):
@@ -845,9 +853,6 @@ class DgtDisplay(MsgDisplay, threading.Thread):
 
         elif isinstance(message, Message.WRONG_FEN):
             DgtObserver.fire(self.dgttranslate.text('C10_setpieces'))
-
-        elif isinstance(message, Message.UPDATE_PICO):
-            DgtObserver.fire(self.dgttranslate.text('Y00_update'))
 
         elif isinstance(message, Message.BATTERY_BT):
             if message.percent == 0x7f:

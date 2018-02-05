@@ -670,7 +670,9 @@ def main():
 
     # Update
     if args.enable_update:
-        update_picochess(args.dgtpi, args.enable_update_reboot, dgttranslate)
+        if update_picochess(dgttranslate):
+            if args.enable_update_reboot:
+                reboot(args.dgtpi, dev='web')
 
     # try the given engine first and if that fails the first/second from "engines.ini" then crush
     engine_file = args.engine if args.engine_remote_server is None else args.engine_remote
@@ -853,7 +855,7 @@ def main():
                 game = chess.Board(event.fen, uci960)
                 # see new_game
                 stop_search_and_clock()
-                engine.chess960_send()
+                engine.chess960_send(uci960)
                 engine.newgame(game.copy())
                 done_computer_fen = None
                 done_move = pb_move = chess.Move.null()
@@ -877,7 +879,7 @@ def main():
                         game.set_chess960_pos(event.pos960)
                     # see setup_position
                     stop_search_and_clock()
-                    engine.chess960_send()
+                    engine.chess960_send(uci960)
                     engine.newgame(game.copy())
                     done_computer_fen = None
                     done_move = pb_move = chess.Move.null()
@@ -1121,9 +1123,7 @@ def main():
                 MsgDisplay.show(Message.EXIT_MENU())
 
             elif isinstance(event, Event.UPDATE_PICO):
-                MsgDisplay.show(Message.UPDATE_PICO())
                 checkout_tag(event.tag)
-                MsgDisplay.show(Message.EXIT_MENU())
 
             elif isinstance(event, Event.REMOTE_ROOM):
                 MsgDisplay.show(Message.REMOTE_ROOM(inside=event.inside))

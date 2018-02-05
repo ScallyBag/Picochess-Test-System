@@ -142,13 +142,12 @@ def main():
             game_copy.pop()
         return fens
 
-    def think(game: chess.Board, timec: TimeControl, msg: Message):
+    def think(game: chess.Board, timec: TimeControl):
         """
         Start a new search on the current game.
 
         If a move is found in the opening book, fire an event in a few seconds.
         """
-        MsgDisplay.show(msg)
         start_clock(wait=True)
         book_res = searchmoves.book(bookreader, game.copy())
         if book_res:
@@ -287,19 +286,16 @@ def main():
             game.push(move)
             searchmoves.reset()
             if interaction_mode in (Mode.NORMAL, Mode.BRAIN):
-                msg = Message.USER_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy())
+                MsgDisplay.show(Message.USER_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy()))
                 game_end = check_game_state(game, play_mode)  # type: Message
                 if game_end:
-                    MsgDisplay.show(msg)
                     MsgDisplay.show(game_end)
                 else:
                     if interaction_mode == Mode.NORMAL or not ponder_hit:
-                        if not check_game_state(game, play_mode):
-                            logging.info('starting think()')
-                            think(game, time_control, msg)
+                        logging.info('starting think()')
+                        think(game, time_control)
                     else:
                         logging.info('think() not started cause ponderhit')
-                        MsgDisplay.show(msg)
                         start_clock(wait=True)
                         engine.hit()  # finally tell the engine
             elif interaction_mode == Mode.REMOTE:
@@ -913,7 +909,8 @@ def main():
                         # set computer to move - in case the user just changed the engine
                         play_mode = PlayMode.USER_WHITE if game.turn == chess.BLACK else PlayMode.USER_BLACK
                         if not check_game_state(game, play_mode):
-                            think(game, time_control, Message.ALTERNATIVE_MOVE(game=game.copy(), play_mode=play_mode))
+                            MsgDisplay.show(Message.ALTERNATIVE_MOVE(game=game.copy(), play_mode=play_mode))
+                            think(game, time_control)
                     else:
                         logging.warning('wrong function call [alternative]! mode: %s', interaction_mode)
 
@@ -939,17 +936,14 @@ def main():
                         time_control.reset()
 
                     legal_fens = []
-                    game_end = check_game_state(game, play_mode)
-                    if game_end:
-                        MsgDisplay.show(msg)
-                    else:
+                    MsgDisplay.show(msg)
+                    if not check_game_state(game, play_mode):
                         cond1 = game.turn == chess.WHITE and play_mode == PlayMode.USER_BLACK
                         cond2 = game.turn == chess.BLACK and play_mode == PlayMode.USER_WHITE
                         if cond1 or cond2:
                             time_control.reset_start_time()
-                            think(game, time_control, msg)
+                            think(game, time_control)
                         else:
-                            MsgDisplay.show(msg)
                             start_clock(wait=True)
                             legal_fens = compute_legal_fens(game.copy())
 

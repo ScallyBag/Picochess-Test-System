@@ -315,7 +315,8 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             logging.debug('ignore same fen')
             return
         self.dgtmenu.set_dgt_fen(fen)
-        self.drawresign_fen = self._drawresign(fen)
+        _, _, _, rnk_5, rnk_4, _, _, _ = fen.split('/')
+        self.drawresign_fen = '8/8/8/' + rnk_5 + '/' + rnk_4 + '/8/8/8'
         # Fire the appropriate event
         if fen in level_map:
             eng = self.dgtmenu.get_engine()
@@ -421,7 +422,6 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             logging.debug('map: reboot')
             self._reboot()
         elif self.drawresign_fen in drawresign_map:
-            # if not self._inside_main_menu('dont_care_dev'):  # @todo removed - why its there?
             logging.debug('map: drawresign')
             EvtObserver.fire(Event.DRAW_RESIGN(result=drawresign_map[self.drawresign_fen]))
         else:
@@ -651,10 +651,6 @@ class DgtDisplay(MsgDisplay, threading.Thread):
             text.wait = True
             DgtObserver.fire(text)
             self.show_move_or_value = (self.show_move_or_value + 1) % (self.dgtmenu.get_ponderinterval() * 2)
-
-    def _drawresign(self, fen: str):
-        _, _, _, rnk_5, rnk_4, _, _, _ = fen.split('/')
-        return '8/8/8/' + rnk_5 + '/' + rnk_4 + '/8/8/8'
 
     def _exit_display(self, devs=None):
         if devs is None:  # prevent W0102 error

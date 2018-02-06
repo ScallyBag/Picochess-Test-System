@@ -626,7 +626,7 @@ def main():
 
     time_control, time_text = transfer_time(args.time.split())
     time_text.beep = False
-    # The class dgtDisplay fires Event (Observable) & DispatchDgt (Dispatcher)
+    # The class dgtDisplay fires Event (EvtObserver) & DispatchDgt (DgtObserver)
     DgtDisplay(dgttranslate, dgtmenu, time_control).start()
 
     # Create PicoTalker for speech output

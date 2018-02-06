@@ -161,11 +161,8 @@ def main():
             engine.position(copy.deepcopy(game))
             engine.go(uci_dict)
 
-    def analyse(game: chess.Board):
     def analyse(game: chess.Board, start=False):
         """Start a new ponder search on the current game."""
-        engine.position(copy.deepcopy(game))
-        engine.ponder()
         game_end = check_game_state(game, play_mode)  # type: Message
         if game_end:
             MsgDisplay.show(game_end)

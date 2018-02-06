@@ -148,7 +148,7 @@ def main():
 
         If a move is found in the opening book, fire an event in a few seconds.
         """
-        start_clock()
+        start_clock(wait=True)
         book_res = searchmoves.book(bookreader, game.copy())
         if book_res:
             EvtObserver.fire(Event.BEST_MOVE(move=book_res.bestmove, ponder=book_res.ponder, inbook=True))
@@ -162,14 +162,22 @@ def main():
             engine.go(uci_dict)
 
     def analyse(game: chess.Board):
+    def analyse(game: chess.Board, start=False):
         """Start a new ponder search on the current game."""
         engine.position(copy.deepcopy(game))
         engine.ponder()
+        game_end = check_game_state(game, play_mode)  # type: Message
+        if game_end:
+            MsgDisplay.show(game_end)
+        else:
+            if start:  # as long engine sends Events not Messages dont care order cause: Event handling blocked anyway
+                start_clock(wait=True)  # just in case: start the clock first - but need to wait for "before send msg"
+            engine.position(copy.deepcopy(game))
+            engine.ponder()
 
     def observe(game: chess.Board):
         """Start a new ponder search on the current game."""
-        analyse(game)
-        start_clock()
+        analyse(game, True)
 
     def brain(game: chess.Board, timec: TimeControl):
         """Start a new permanent brain search on the game with pondering move made."""
@@ -186,7 +194,7 @@ def main():
     def stop_search_and_clock(ponder_hit=False):
         """Depending on the interaction mode stop search and clock."""
         if interaction_mode in (Mode.NORMAL, Mode.BRAIN):
-            stop_clock()
+            stop_clock(wait=True)
             if engine.is_waiting():
                 logging.info('engine already waiting')
             else:
@@ -195,7 +203,7 @@ def main():
                 else:
                     stop_search()
         elif interaction_mode in (Mode.REMOTE, Mode.OBSERVE):
-            stop_clock()
+            stop_clock(wait=True)
             stop_search()
         elif interaction_mode in (Mode.ANALYSIS, Mode.KIBITZ, Mode.PONDER):
             stop_search()
@@ -207,7 +215,7 @@ def main():
             time.sleep(0.05)
             logging.warning('engine is still not waiting')
 
-    def stop_clock():
+    def stop_clock(wait=True):
         """Stop the clock."""
         if interaction_mode in (Mode.NORMAL, Mode.BRAIN, Mode.OBSERVE, Mode.REMOTE):
             time_control.stop_internal()
@@ -216,7 +224,7 @@ def main():
         else:
             logging.warning('wrong function call [stop]! mode: %s', interaction_mode)
 
-    def start_clock():
+    def start_clock(wait=True):
         """Start the clock."""
         if interaction_mode in (Mode.NORMAL, Mode.BRAIN, Mode.OBSERVE, Mode.REMOTE):
             time_control.start_internal(game.turn)
@@ -291,7 +299,7 @@ def main():
                         think(game, time_control)
                     else:
                         logging.info('think() not started cause ponderhit')
-                        start_clock()
+                        start_clock(wait=True)
                         engine.hit()  # finally tell the engine
             elif interaction_mode == Mode.REMOTE:
                 msg = Message.USER_MOVE_DONE(move=move, fen=fen, turn=turn, game=game.copy())
@@ -406,7 +414,7 @@ def main():
             else:
                 searchmoves.reset()
                 time_control.add_time(not game.turn)
-                start_clock()
+                start_clock(wait=True)
                 if interaction_mode == Mode.BRAIN:
                     brain(game, time_control)
 
@@ -835,7 +843,7 @@ def main():
                     gc.collect()
                     set_wait_state(msg, not engine_fallback)
                     if interaction_mode in (Mode.NORMAL, Mode.BRAIN):  # engine isnt started/searching => stop the clock
-                        stop_clock()
+                        stop_clock(wait=True)
                 else:
                     logging.error('engine shutdown failure')
                     MsgDisplay.show(Message.ENGINE_FAIL())
@@ -892,13 +900,13 @@ def main():
 
             elif isinstance(event, Event.PAUSE_RESUME):
                 if engine.is_thinking():
-                    stop_clock()
+                    stop_clock(wait=False)
                     engine.stop(show_best=True)
                 elif not done_computer_fen:
                     if time_control.internal_running():
-                        stop_clock()
+                        stop_clock(wait=False)
                     else:
-                        start_clock()
+                        start_clock(wait=False)
                 else:
                     logging.debug('best move displayed, dont start/stop clock')
 
@@ -939,15 +947,14 @@ def main():
                         time_control.reset()
 
                     legal_fens = []
-                    game_end = check_game_state(game, play_mode)
-                    if not game_end:
+                    if not check_game_state(game, play_mode):
                         cond1 = game.turn == chess.WHITE and play_mode == PlayMode.USER_BLACK
                         cond2 = game.turn == chess.BLACK and play_mode == PlayMode.USER_WHITE
                         if cond1 or cond2:
                             time_control.reset_start_time()
                             think(game, time_control)
                         else:
-                            start_clock()
+                            start_clock(wait=True)
                             legal_fens = compute_legal_fens(game.copy())
 
                     if best_move_displayed:
@@ -976,7 +983,7 @@ def main():
             elif isinstance(event, Event.BEST_MOVE):
                 if interaction_mode in (Mode.NORMAL, Mode.BRAIN) and is_not_user_turn(game.turn):
                     # clock must be stopped BEFORE the "book_move" event cause SetNRun resets the clock display
-                    stop_clock()
+                    stop_clock(wait=True)
                     # @todo 8/8/R6P/1R6/7k/2B2K1p/8/8 and sliding Ra6 over a5 to a4 - handle this in correct way!!
                     if game.is_game_over():
                         logging.warning('illegal move on game_end - sliding? move: %s fen: %s', event.move, game.fen())

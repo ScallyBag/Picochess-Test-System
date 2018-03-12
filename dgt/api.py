@@ -53,7 +53,6 @@ class EventApi():
     NEW_LEVEL = 'EVT_NEW_LEVEL'  # User sets engine level
     NEW_GAME = 'EVT_NEW_GAME'  # User starts a new game
     DRAW_RESIGN = 'EVT_DRAW_RESIGN'  # User declares a resignation or draw
-    KEYBOARD_MOVE = 'EVT_KEYBOARD_MOVE'  # Keyboard sends a move (to be transfered to a fen)
     REMOTE_MOVE = 'EVT_REMOTE_MOVE'  # Remote player move
     NEW_BOOK = 'EVT_NEW_BOOK'  # User chooses an opening book
     NEW_ENGINE = 'EVT_NEW_ENGINE'  # Change engine
@@ -68,6 +67,7 @@ class EventApi():
     EMAIL_LOG = 'EVT_EMAIL_LOG'  # User want to send the log file by eMail
     NEW_VOICE = 'EVT_NEW_VOICE'  # User sets a new voice
     # Keyboard events
+    KEYBOARD_MOVE = 'EVT_KEYBOARD_MOVE'  # Keyboard sends a move (to be transfered to a fen)
     KEYBOARD_BUTTON = 'EVT_KEYBOARD_BUTTON'  # User pressed a button at the virtual clock
     KEYBOARD_FEN = 'EVT_KEYBOARD_FEN'  # Virtual board sends a fen
     # Engine events
@@ -242,7 +242,6 @@ class Event():
     NEW_LEVEL = ClassFactory(EventApi.NEW_LEVEL, ['options', 'level_text', 'level_name'])
     NEW_GAME = ClassFactory(EventApi.NEW_GAME, ['pos960'])
     DRAW_RESIGN = ClassFactory(EventApi.DRAW_RESIGN, ['result'])
-    KEYBOARD_MOVE = ClassFactory(EventApi.KEYBOARD_MOVE, ['move'])
     REMOTE_MOVE = ClassFactory(EventApi.REMOTE_MOVE, ['move', 'fen'])
     NEW_BOOK = ClassFactory(EventApi.NEW_BOOK, ['book', 'book_text', 'show_ok'])
     NEW_ENGINE = ClassFactory(EventApi.NEW_ENGINE, ['eng', 'eng_text', 'options', 'show_ok'])
@@ -257,6 +256,7 @@ class Event():
     EMAIL_LOG = ClassFactory(EventApi.EMAIL_LOG, [])
     NEW_VOICE = ClassFactory(EventApi.NEW_VOICE, ['type', 'lang', 'speaker', 'speed'])
     # Keyboard events
+    KEYBOARD_MOVE = ClassFactory(EventApi.KEYBOARD_MOVE, ['move'])
     KEYBOARD_BUTTON = ClassFactory(EventApi.KEYBOARD_BUTTON, ['button', 'dev'])
     KEYBOARD_FEN = ClassFactory(EventApi.KEYBOARD_FEN, ['fen'])
     # Engine events

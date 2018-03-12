@@ -573,14 +573,17 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         self.hint_move = message.pv[0]
         self.hint_fen = message.game.fen()
         self.hint_turn = message.game.turn
-        if message.mode == Mode.ANALYSIS and not self._inside_main_menu('dont_care_dev'):
+        # if message.mode == Mode.ANALYSIS and not self._inside_main_menu('dont_care_dev'):
+        if message.mode == Mode.ANALYSIS:
+            devs = {None if self._inside_main_menu(dev) else dev for dev in {'ser', 'i2c', 'web'}}
+            devs.remove(None)
             side = self._get_clock_side(self.hint_turn)
             beep = self.dgttranslate.bl(BeepLevel.NO)
             disp = Dgt.DISPLAY_MOVE(move=self.hint_move, fen=self.hint_fen, side=side, wait=True, maxtime=0,
-                                    beep=beep, devs={'ser', 'i2c', 'web'}, uci960=self.uci960,
-                                    lang=self.dgttranslate.language, capital=self.dgttranslate.capital,
-                                    long=self.dgttranslate.notation)
-            DgtObserver.fire(disp)
+                                    beep=beep, devs=devs, uci960=self.uci960, lang=self.dgttranslate.language,
+                                    capital=self.dgttranslate.capital, long=self.dgttranslate.notation)
+            if devs:
+                DgtObserver.fire(disp)
 
     def _process_startup_info(self, message):
         self.play_mode = message.info['play_mode']

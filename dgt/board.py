@@ -779,4 +779,5 @@ class DgtBoard(object):
     def run(self):
         """NOT called from threading.Thread instead inside the __init__ function from hw.py."""
         self.incoming_board_thread = Timer(0, self._process_incoming_board_forever)
-        self.incoming_board_thread.start()
+        # TEST webserver with 2 clocks (web & i2c) - doesnt work anymore with normal dgt board!
+        # self.incoming_board_thread.start()

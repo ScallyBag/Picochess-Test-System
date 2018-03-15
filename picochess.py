@@ -51,6 +51,8 @@ from dgt.display import DgtDisplay
 from dgt.board import DgtBoard
 from dgt.translate import DgtTranslate
 from dgt.menu import DgtMenu
+# TEST webserver with 2 clocks (web & i2c) - doesnt work anymore with normal dgt board!
+from dgt.cn import DgtCn
 
 
 class AlternativeMover:
@@ -656,6 +658,11 @@ def main():
             dgtboard.run()  # a clock can only be online together with the board, so we must start it infront
         DgtHw(dgtboard).start()
         dgtdispatcher.register('ser')
+
+    # TEST webserver with 2 clocks (web & i2c) - doesnt work anymore with normal dgt board!
+    DgtCn(dgtboard).start()
+    dgtdispatcher.register('i2c')
+
     # The class Dispatcher sends DgtApi messages at the correct (delayed) time out
     dgtdispatcher.start()
     # Save to PGN

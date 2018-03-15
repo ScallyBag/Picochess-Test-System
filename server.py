@@ -68,6 +68,11 @@ class ChannelHandler(ServerRequestHandler):
                 if 'last_dgt_move_msg' in self.shared:
                     fen = self.shared['last_dgt_move_msg']['fen'].split(' ')[0]
                     EvtObserver.fire(Event.KEYBOARD_FEN(fen=fen))
+            # TEST webserver with 2 clocks (web & i2c) - doesnt work anymore with normal dgt board!
+            elif cmd.startswith('but:'):
+                button = raw.split(':')[1].strip()
+                MsgDisplay.show(Message.DGT_BUTTON(button=button, dev='i2c'))
+
             else:
                 # Event.KEYBOARD_MOVE tranfers "move" to "fen" and then continues with "Message.DGT_FEN"
                 move = chess.Move.from_uci(cmd)

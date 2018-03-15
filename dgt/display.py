@@ -576,7 +576,7 @@ class DgtDisplay(MsgDisplay, threading.Thread):
         # if message.mode == Mode.ANALYSIS and not self._inside_main_menu('dont_care_dev'):
         if message.mode == Mode.ANALYSIS:
             devs = {None if self._inside_main_menu(dev) else dev for dev in {'ser', 'i2c', 'web'}}
-            devs.remove(None)
+            devs.discard(None)
             side = self._get_clock_side(self.hint_turn)
             beep = self.dgttranslate.bl(BeepLevel.NO)
             disp = Dgt.DISPLAY_MOVE(move=self.hint_move, fen=self.hint_fen, side=side, wait=True, maxtime=0,

@@ -111,7 +111,7 @@ def main():
         if error_fen:
             logging.info('wrong fen %s for 3secs', error_fen)
             MsgDisplay.show(Message.WRONG_FEN())
-            MsgDisplay.show(Message.EXIT_MENU())
+            MsgDisplay.show(Message.EXIT_MENU(dev='dont_care_dev'))
 
     def stop_fen_timer():
         """Stop the fen timer cause another fen string been send."""

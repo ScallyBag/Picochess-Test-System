@@ -225,81 +225,6 @@ BookFilter = 20
 GuideBookFile = guide/grandpa.bin
 MainBookFile = small.bin
 
-[Atilla]
-; Atilla
-; Personality for Rodent III chess engine, version 0.210 or later
-; author: Ongjen Perovic
-;
- PawnValueMg = 100
- KnightValueMg = 325
- BishopValueMg = 310
- RookValueMg = 515
- QueenValueMg = 1000
- PawnValueEg = 110
- KnightValueEg = 320
- BishopValueEg = 305
- RookValueEg = 530
- QueenValueEg = 1013
- KeepPawn = 5
- KeepKnight = 10
- KeepBishop = 0
- KeepRook = 0
- KeepQueen = 0
- BishopPair = 45
- KnightPair = 10
- RookPair = -9
- KnightLikesClosed = 10
- RookLikesOpen = 3
- MajorUp = 60
- MinorUp = 53
- BothUp = 80
- ExchangeImbalance = 20
- MinorVsQueen = 4
- TwoMinors = 44
- Material = 80
- OwnAttack = 250
- OppAttack = 100
- OwnMobility = 140
- OppMobility = 110
- KingTropism = 45
- PiecePlacement = 170
- PiecePressure = 125
- PassedPawns = 130
- PawnStructure = 170
- Lines = 100
- Outposts = 190
- PawnShield = 120
- PawnStorm = 100
- Forwardness = 0
- Center = 50
- DoubledPawnMg = -12
- DoubledPawnEg = -23
- IsolatedPawnMg = -10
- IsolatedPawnEg = -8
- IsolatedOnOpenMg = -10
- BackwardPawnMg = -8
- BackwardPawnEg = -10
- BackwardOnOpenMg = -8
- FianchBase = 4
- Fianchetto = 6
- ReturningB = 10
- MinorBehindPawn = 5
- PawnThreat = 4
- PawnMass = 100
- PawnChains = 115
- PstStyle = 0
- MobilityStyle = 0
- NpsLimit = 0
- EvalBlur = 0
- Contempt = 0
- SlowMover = 100
- Selectivity = 175
- SearchSkill = 10
- RiskyDepth = 3
- BookFilter = 20
- GuideBookFile = guide/guide.bin
- MainBookFile = rodent.bin
-
 [Barbarian]
 ; Barbarian
 ; Personality for Rodent III chess engine, version 0.210 or later
@@ -674,81 +599,6 @@ BookFilter = 20
 GuideBookFile = guide.bin
 MainBookFile = rodent.bin
 
-[Bryan]
-; Bryan
-; Personality for Rodent III chess engine, version 0.210 or later
-; author: Ongjen Perovic
-;
- PawnValueMg = 90
- KnightValueMg = 310
- BishopValueMg = 325
- RookValueMg = 465
- QueenValueMg = 1000
- PawnValueEg = 110
- KnightValueEg = 305
- BishopValueEg = 320
- RookValueEg = 529
- QueenValueEg = 1013
- KeepPawn = -2
- KeepKnight = 5
- KeepBishop = 10
- KeepRook = 0
- KeepQueen = 20
- BishopPair = 70
- KnightPair = -9
- RookPair = -9
- KnightLikesClosed = 6
- RookLikesOpen = 3
- MajorUp = 60
- MinorUp = 65
- BothUp = 80
- ExchangeImbalance = -5
- MinorVsQueen = 6
- TwoMinors = 44
- Material = 55
- OwnAttack = 430
- OppAttack = 95
- OwnMobility = 230
- OppMobility = 100
- KingTropism = 90
- PiecePlacement = 160
- PiecePressure = 170
- PassedPawns = 105
- PawnStructure = 95
- Lines = 150
- Outposts = 100
- PawnShield = 120
- PawnStorm = 140
- Forwardness = 20
- Center = 105
- DoubledPawnMg = -12
- DoubledPawnEg = -23
- IsolatedPawnMg = -10
- IsolatedPawnEg = -8
- IsolatedOnOpenMg = -10
- BackwardPawnMg = -8
- BackwardPawnEg = -10
- BackwardOnOpenMg = -8
- FianchBase = 4
- Fianchetto = 7
- ReturningB = 10
- MinorBehindPawn = 5
- PawnThreat = 4
- PawnMass = 100
- PawnChains = 100
- PstStyle = 0
- MobilityStyle = 0
- NpsLimit = 0
- EvalBlur = 0
- Contempt = 20
- SlowMover = 100
- Selectivity = 175
- SearchSkill = 10
- RiskyDepth = 0
- BookFilter = 20
- GuideBookFile = guide/guide.bin
- MainBookFile = rodent.bin
-
 [Careless]
 ; Careless
 ; Personality for Rodent III chess engine, version 0.210 or later
@@ -1120,81 +970,6 @@ RiskyDepth = 0
 BookFilter = 20
 GuideBookFile = guide/guide.bin
 MainBookFile = rodent.bin
-
-[David]
-; David
-; Personality for Rodent III chess engine, version 0.210 or later
-; author: Ongjen Perovic
-;
- PawnValueMg = 105
- KnightValueMg = 315
- BishopValueMg = 322
- RookValueMg = 514
- QueenValueMg = 1000
- PawnValueEg = 115
- KnightValueEg = 305
- BishopValueEg = 320
- RookValueEg = 529
- QueenValueEg = 1013
- KeepPawn = 3
- KeepKnight = 10
- KeepBishop = 0
- KeepRook = 0
- KeepQueen = 0
- BishopPair = 52
- KnightPair = 0
- RookPair = -9
- KnightLikesClosed = 10
- RookLikesOpen = 4
- MajorUp = 60
- MinorUp = 53
- BothUp = 80
- ExchangeImbalance = 5
- MinorVsQueen = 4
- TwoMinors = 44
- Material = 95
- OwnAttack = 150
- OppAttack = 135
- OwnMobility = 140
- OppMobility = 260
- KingTropism = 30
- PiecePlacement = 230
- PiecePressure = 110
- PassedPawns = 115
- PawnStructure = 115
- Lines = 120
- Outposts = 175
- PawnShield = 130
- PawnStorm = 100
- Forwardness = 0
- Center = 130
- DoubledPawnMg = -12
- DoubledPawnEg = -23
- IsolatedPawnMg = -10
- IsolatedPawnEg = -8
- IsolatedOnOpenMg = -10
- BackwardPawnMg = -8
- BackwardPawnEg = -10
- BackwardOnOpenMg = -8
- FianchBase = 4
- Fianchetto = 6
- ReturningB = 10
- MinorBehindPawn = 5
- PawnThreat = 4
- PawnMass = 110
- PawnChains = 140
- PstStyle = 0
- MobilityStyle = 0
- NpsLimit = 0
- EvalBlur = 0
- Contempt = 0
- SlowMover = 100
- Selectivity = 175
- SearchSkill = 10
- RiskyDepth = 0
- BookFilter = 20
- GuideBookFile = guide/guide.bin
- MainBookFile = rodent.bin
 
 [Deborah]
 ; Deborah
@@ -1643,7 +1418,7 @@ MainBookFile = small.bin
 
 [Fighter]
 ; Fighter
-; Personality for Rodent III chess engine, version 0.210 or later
+; Personality for Rodent III chess engine, version 0.210 or later 
 ; Created by Pawel Koziol
 ; Likes sacrificing pawns and restricting opponent's mobility.
 ;
@@ -2384,75 +2159,6 @@ RiskyDepth = 0
 BookFilter = 20
 GuideBookFile = micro.bin
 MainBookFile = micro.bin
-
-[Johnathan]
-; Johnathan
-; Personality for Rodent III chess engine, version 0.210 or later
-; author: Ongjen Perovic
-;
-PawnValueMg = 95
-KnightValueMg = 310
-BishopValueMg = 322
-RookValueMg = 514
-QueenValueMg = 1000
-PawnValueEg = 110
-KnightValueEg = 305
-BishopValueEg = 320
-RookValueEg = 529
-QueenValueEg = 1013
-KeepPawn = -1
-KeepKnight = 5
-KeepBishop = 10
-KeepRook = 0
-KeepQueen = 15
-BishopPair = 70
-KnightPair = -9
-RookPair = -9
-KnightLikesClosed = 6
-RookLikesOpen = 4
-MajorUp = 65
-MinorUp = 60
-BothUp = 80
-ExchangeImbalance = -5
-MinorVsQueen = 4
-TwoMinors = 44
-Material = 70
-OwnAttack = 350
-OppAttack = 95
-OwnMobility = 300
-OppMobility = 100
-KingTropism = 85
-PiecePlacement = 145
-PiecePressure = 150
-PassedPawns = 110
-PawnStructure = 95
-Lines = 130
-Outposts = 78
-PawnShield = 119
-PawnStorm = 125
-Forwardness = 0
-Center = 75
-DoubledPawnMg = -12
-DoubledPawnEg = -23
-IsolatedPawnMg = -10
-IsolatedPawnEg = -20
-IsolatedOnOpenMg = -10
-BackwardPawnMg = -8
-BackwardPawnEg = -10
-BackwardOnOpenMg = -8
-Fianchetto = 6
-ReturningB = 10
-PawnMass = 100
-PawnChains = 100
-PstStyle = 0
-MobilityStyle = 0
-NpsLimit = 0
-EvalBlur = 0
-Contempt = 20
-SlowMover = 100
-Selectivity = 175
-SearchSkill = 10
-BookFilter = 20
 
 [Karpov]
 ; Karpov
@@ -4743,85 +4449,6 @@ SearchSkill = 10
 RiskyDepth = 0
 BookFilter = 20
 GuideBookFile = guide.bin
-MainBookFile = rodent.bin
-
-[Tal]
-; Tal personality for Rodent III chess engine, version 0.229 or later
-; created by Brendan J. Norman, modified by Pawel Koziol
-; Hommage to Mikhail Tal
-;
-; "My head is filled with sunshine. In the first game
-; of my match with Botvinnik I will play 1.e4
-; and I shall win."
-;
-PawnValueMg = 100
-KnightValueMg = 325
-BishopValueMg = 340
-RookValueMg = 500
-QueenValueMg = 950
-PawnValueEg = 101
-KnightValueEg = 320
-BishopValueEg = 340
-RookValueEg = 505
-QueenValueEg = 960
-KeepPawn = 8
-KeepKnight = 10
-KeepBishop = 10
-KeepRook = 0
-KeepQueen = 20
-BishopPair = 70
-KnightPair = -10
-RookPair = -9
-KnightLikesClosed = 6
-RookLikesOpen = 3
-MajorUp = 60
-MinorUp = 53
-BothUp = 80
-ExchangeImbalance = -10
-MinorVsQueen = 4
-TwoMinors = 44
-Material = 48
-OwnAttack = 450
-OppAttack = 100
-OwnMobility = 125
-OppMobility = 100
-KingTropism = 80
-PiecePlacement = 100
-PiecePressure = 190
-PassedPawns = 127
-PawnStructure = 90
-Lines = 100
-Outposts = 100
-PawnShield = 189
-PawnStorm = 181
-Forwardness = 0
-Center = 50
-DoubledPawnMg = -12
-DoubledPawnEg = -24
-IsolatedPawnMg = -10
-IsolatedPawnEg = -20
-IsolatedOnOpenMg = -10
-BackwardPawnMg = -8
-BackwardPawnEg = -10
-BackwardOnOpenMg = -8
-FianchBase = 4
-Fianchetto = 8
-ReturningB = 10
-MinorBehindPawn = 5
-PawnThreat = 4
-PawnMass = 100
-PawnChains = 100
-PstStyle = 0
-MobilityStyle = 0
-NpsLimit = 0
-EvalBlur = 0
-Contempt = 5
-SlowMover = 95
-Selectivity = 175
-SearchSkill = 10
-RiskyDepth = 0
-BookFilter = 20
-GuideBookFile = players/ph-tal2.bin
 MainBookFile = rodent.bin
 
 [Theresa]

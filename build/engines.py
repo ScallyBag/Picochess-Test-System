@@ -21,6 +21,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
 
-from uci.write import write_engine_ini
+import uci
 
-write_engine_ini()
+uci.write_engine_ini()

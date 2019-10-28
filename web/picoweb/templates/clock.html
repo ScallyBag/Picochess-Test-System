@@ -5,7 +5,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Picochess Webserver</title>
+    <title>Webserver Picochess</title>
     <link rel="shortcut icon" type="image/x-icon" href="/static/img/favicon.ico">
     <link rel="stylesheet" href="/static/css/ladda-themeless.min.css"/>
 
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/static/css/material-design/ripples.min.css"/>
     <link rel="stylesheet" href="/static/css/material-design/bootstrap-material-design.min.css"/>
 
-    <link rel="stylesheet" href="/static/css/normalize-7.0.0.css"/>
+    <link rel="stylesheet" href="/static/css/normalize-8.0.0.css"/>
     <link rel="stylesheet" href="/static/css/font-awesome.min.css"/>
     <link rel="stylesheet" href="/static/css/datatables.min.css"/>
     <link rel="stylesheet" href="/static/css/chessground/chessground.css"/>
@@ -52,62 +52,19 @@
                     <button type="button" id="downloadBtn" class="btn btn-raised btn-info btn-xs text-break" data-placement="auto" data-toggle="tooltip" title="get pgn file">
                         <i class='fa fa-download'></i><span class="hidden-xs"> Get PGN</span>
                     </button>
-                    <div class="btn-group">
-                        <button type="button" id="remoteBtn" class="btn btn-raised btn-success btn-xs text-break" data-placement="auto" data-toggle="dropdown" title="remote">
-                            <i class='fa fa-cloud-download'></i><span class="hidden-xs"> Remote</span>
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <div style="padding: 1vw;">
-                                    <div class="col-xs-6">
-                                        <label for="RemoteRoom">Room:</label>
-                                        <input class="form-control" id="RemoteRoom" type="text" value="" maxlength="6" placeholder="max6chars">
-                                    </div>
-                                    <div class="col-xs-6">
-                                        <label for="RemoteNick">Nick:</label>
-                                        <input class="form-control" id="RemoteNick" type="text" value="" maxlength="6" placeholder="max6chars">
-                                    </div>
-                                    <div class="col-xs-12">
-                                        <button type="button" id="enterRoomBtn" class="btn btn-raised btn-success btn-sm text-break" title="enter room">
-                                            <i class='fa fa-arrow-right'></i><span class="hidden-xs"> Enter Room</span>
-                                        </button>
-                                        <button type="button" id="leaveRoomBtn" class="btn btn-raised btn-warning btn-sm text-break" title="leave room">
-                                            <i class='fa fa-arrow-left'></i><span class="hidden-xs"> Leave Room</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </li>
-                            <!--
-                            <li role="separator" class="divider"></li>
-                            <li>
-                                <div class="col-xs-12" style="padding: 1vw;">
-                                    <button type="button" id="broadcastBtn" class="btn btn-raised btn-success btn-xs text-break" title="broadcast position">
-                                        <i class='fa fa-cloud-download'></i><span class="hidden-xs"> Broadcast</span>
-                                    </button>
-                                </div>
-                            </li>
-                            -->
-                            <li role="separator" class="divider"></li>
-                            <li>
-                                <div style="padding: 1vw;">
-                                    <div class="col-xs-12">
-                                        <label for="remoteText">Chat:</label>
-                                        <input class="form-controlX" id="remoteText" type="text" value="" placeholder="enter your text">
-                                    </div>
-                                    <div class="col-xs-12">
-                                        <button type="button" id="SendTextRemoteBtn" class="btn btn-raised btn-success btn-sm text-break" title="send text">
-                                            <i class='fa fa-arrow-right'></i><span class="hidden-xs"> Send Text</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
                 <div class="pull-right">
-                    <button type="button" id="consoleBtn" class="btn btn-raised btn-primary btn-xs" data-placement="auto" data-toggle="tooltip" title="enter/exit console mode">
-                        <i class='fa fa-bullhorn'></i><span class="hidden-xs"> Console</span>
+                    <button type="button" id="bookBtn" class="btn btn-raised btn-primary btn-xs" data-placement="auto" data-toggle="tooltip" title="show/hide book">
+                        <i class='fa fa-book'></i><span class="hidden-xs"> Book</span>
+                    </button>
+                    <button type="button" id="engineBtn" class="btn btn-raised btn-primary btn-xs" data-placement="auto" data-toggle="tooltip" title="show/hide engine">
+                        <i class='fa fa-cubes'></i><span class="hidden-xs"> Engine</span>
+                    </button>
+                    <button type="button" id="consoleBtn" class="btn btn-raised btn-primary btn-xs" data-placement="auto" data-toggle="tooltip" title="show/hide console">
+                        <i class='fa fa-terminal'></i><span class="hidden-xs"> Console</span>
+                    </button>
+                    <button type="button" id="databaseBtn" class="btn btn-raised btn-primary btn-xs" data-placement="auto" data-toggle="tooltip" title="show/hide database">
+                        <i class='fa fa-database'></i><span class="hidden-xs"> Database</span>
                     </button>
                 </div>
             </div>
@@ -134,72 +91,91 @@
                 </div>
             </div>
         </div>
-        <div class="col-xs-6">
-            <div id="board_panel" class="panel panel-primary">
-                <div class="panel-body" style="position:relative;">
-                    <section id="boardsection" class="blue merida svg-container">
-                        <div id="board" class="svg-content" style="margin-bottom: 10px;"></div>
-                    </section>
-                    <div class="pull-left">
-                        <span id="sidetomove"></span>&nbsp;<span id="BoardStatus"></span>
-                    </div>
-                    <div class="pull-right">
-                        <div id="gameControls">
-                            <button type="button" id="startBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to start of game">
-                                <i class='fa fa-fast-backward'></i>
-                            </button>
-                            <button type="button" id="backBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to previous move">
-                                <i class='fa fa-arrow-left'></i>
-                            </button>
-                            <button type="button" id="fwdBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to next move">
-                                <i class='fa fa-arrow-right'></i>
-                            </button>
-                            <button type="button" id="endBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to end of game">
-                                <i class='fa fa-fast-forward'></i>
-                            </button>
+
+        <div class="col-xs-12">
+            <div class="col-xs-6">
+                <div id="board_panel" class="panel panel-primary">
+                    <div class="panel-body" style="position:relative;">
+                        <section id="boardsection" class="blue merida svg-container">
+                            <div id="board" class="svg-content" style="margin-bottom: 10px;"></div>
+                        </section>
+                        <div class="pull-left">
+                            <span id="sidetomove"></span>&nbsp;<span id="BoardStatus"></span>
+                        </div>
+                        <div class="pull-right">
+                            <div id="gameControls">
+                                <button type="button" id="startBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to start of game">
+                                    <i class='fa fa-fast-backward'></i>
+                                </button>
+                                <button type="button" id="backBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to previous move">
+                                    <i class='fa fa-arrow-left'></i>
+                                </button>
+                                <button type="button" id="fwdBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to next move">
+                                    <i class='fa fa-arrow-right'></i>
+                                </button>
+                                <button type="button" id="endBtn" class="btn btn-default btn-xs" data-placement="auto" data-toggle="tooltip" title="go to end of game">
+                                    <i class='fa fa-fast-forward'></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-xs-6">
-            <div class="panel panel-primary">
-                <div class="panel-heading hidden-xs">
-                    <h3 class="panel-title">DGT Clock</h3>
-                </div>
-                <div class="panel-body" style="min-height: 10vh;">
-                    <div class="pull-left">
-                        <h4 id="DGTClockText"></h4>
+                <div id="console" class="panel panel-primary"">
+                    <div class="panel-heading hidden-xs">
+                        <h3 class="panel-title">Console</h3>
                     </div>
-                    <div class="pull-right">
-                        <h4 id="DGTClockStatus"></h4>
+                    <div class="panel-body">
+                        <div class="col-xs-12">
+                            <div style="overflow-y: auto; height: 10vh; width: 100%;">
+                                <ul id="consoleLogArea" style="list-style-type: none; padding-left: 1vw;"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                <button id="getFenToConsoleBtn" class="btn btn-raised btn-info btn-xs" type="button">
+                                    <i class='fa fa-eye'></i><span class="hidden-xs"> Get Fen</span>
+                                </button>
+                            </span>
+                            <input id="inputConsole" type="text" class="form-control input-sm" style="font-size: 2.0vh;" placeholder="Enter command...">
+                        </div>
                     </div>
                 </div>
+
             </div>
 
-            <div class="panel panel-primary">
-                <div class="panel-heading hidden-xs">
-                    <h3 class="panel-title">Game record</h3>
+            <div class="col-xs-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading hidden-xs">
+                        <h3 class="panel-title">DGT Clock</h3>
+                    </div>
+                    <div class="panel-body" style="min-height: 10vh;">
+                        <div class="pull-left">
+                            <h4 id="DGTClockText"></h4>
+                        </div>
+                        <div class="pull-right">
+                            <h4 id="DGTClockStatus"></h4>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="panel-body">
-                    <div id="pgn" style="max-height:37%; overflow-y:auto; overflow-x:hidden; min-height:40%; position:relative;"></div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading hidden-xs">
+                        <h3 class="panel-title">Game record</h3>
+                    </div>
+
+                    <div class="panel-body">
+                        <div id="pgn" style="max-height:37%; overflow-y:auto; overflow-x:hidden; min-height:40%; position:relative;"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="well">
-                <ul class="nav nav-pills">
-                    <li class="active">
-                        <a href="#book" data-toggle="tab">Book</a>
-                    </li>
-                    <li class="">
-                        <a href="#engine" data-toggle="tab">Engine</a>
-                    </li>
-                </ul>
-
-                <div class="tab-content">
-                    <div class="tab-pane fade active in" id="book">
+                <div id="book" class="panel panel-primary">
+                    <div class="panel-heading hidden-xs">
+                        <h3 class="panel-title">Book (online)</h3>
+                    </div>
+                    <div class="panel-body">
                         <table id="BookTable" class="table table-bordered table-hover" style="font-size: 1vw; text-align: center; width: 100%;">
                             <thead>
                             <tr>
@@ -214,8 +190,21 @@
                             </thead>
                         </table>
                     </div>
+                </div>
 
-                    <div class="tab-pane fade" id="engine">
+                <div id="engine" class="panel panel-primary">
+                    <div class="panel-heading hidden-xs">
+                        <h3 class="panel-title">Engine</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div id="pv_output" class="gameMoves list-group">
+                                <div id="pv_1" style="margin-bottom: 3vh;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-footer">
                         <div class="row">
                             <div class="col-xs-4">
                                 <div class="btn-group pull-left">
@@ -244,61 +233,36 @@
                             </div>
                             <div id="engineStatus"></div>
                         </div>
-                        <div class="row">
-                            <div id="pv_output" class="gameMoves list-group">
-                                <div id="pv_1" style="margin-bottom: 3vh;"></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <div id="Console" class="col-xs-12" style="display: none;">
+        <div id="database" class="col-xs-12">
             <div class="panel panel-primary">
+                <div class="panel-heading hidden-xs">
+                    <h3 class="panel-title">Database (online)</h3>
+                </div>
                 <div class="panel-body">
-                    <div class="col-xs-6">
-                        <div class="input-group">
-                            <span class="input-group-btn">
-                                <button id="getFenToConsoleBtn" class="btn btn-raised btn-info btn-xs" type="button">
-                                    <i class='fa fa-eye'></i><span class="hidden-xs"> Get Fen</span>
-                                </button>
-                            </span>
-                            <input id="inputConsole" type="text" class="form-control input-sm" style="font-size: 2.0vh;" placeholder="Enter command...">
-                        </div>
-                    </div>
-                    <div class="col-xs-6">
-                        <div style="overflow-y: auto; height: 10vh; width: 100%; border: 1px solid black;">
-                            <ul id="consoleLogArea" style="list-style-type: none; padding-left: 1vw;"></ul>
-                        </div>
-                    </div>
+                    <table id="GameTable" class="table table-bordered table-hover" style="font-size: 1vw; text-align: center; width: 100%;">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th>ID</th>
+                            <th data-priority="1">White</th>
+                            <th data-priority="5">White Elo</th>
+                            <th data-priority="1">Black</th>
+                            <th data-priority="5">Black Elo</th>
+                            <th data-priority="2">Result</th>
+                            <th data-priority="3">Date</th>
+                            <th data-priority="4">Event</th>
+                            <th data-priority="4">Site</th>
+                            <th data-priority="3">ECO</th>
+                        </tr>
+                        </thead>
+                    </table>
                 </div>
-                <div class="panel-footer">
-                    This console mode is mainly for development. Better activate picochess together with a DGT-Board ;-) Following commands are available: fen:{fen} and uci-move like 'e2e4'
-                </div>
-            </div>
-        </div>
-
-        <div id="Database" class="col-xs-12">
-            <div class="well">
-                <table id="GameTable" class="table table-bordered table-hover" style="font-size: 1vw; text-align: center; width: 100%;">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th>ID</th>
-                        <th data-priority="1">White</th>
-                        <th data-priority="5">White Elo</th>
-                        <th data-priority="1">Black</th>
-                        <th data-priority="5">Black Elo</th>
-                        <th data-priority="2">Result</th>
-                        <th data-priority="3">Date</th>
-                        <th data-priority="4">Event</th>
-                        <th data-priority="4">Site</th>
-                        <th data-priority="3">ECO</th>
-                    </tr>
-                    </thead>
-                </table>
             </div>
         </div>
     </div>

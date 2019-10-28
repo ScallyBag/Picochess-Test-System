@@ -42,6 +42,7 @@
 
 #gameControls button {
     padding: 4px 1vw;
+    font-size: 2vh;
 }
 
 #clockControls button {
@@ -116,7 +117,7 @@ body {
     margin: 0;
 }
 
-#Console {
+#console {
     font-size: 2.5vh;
 }
 
@@ -163,6 +164,10 @@ body {
 
 div.dataTables_info {
     font-size: 1vw;
+}
+
+div.dataTables_paginate {
+    font-size: 0.8vw;
 }
 
 .dataTables_processing {

@@ -12,7 +12,7 @@ const NAG_SPECULATIVE_MOVE = 5;
 const NAG_DUBIOUS_MOVE = 6;
 //"""A dubious move. Can also be indicated by ``?!`` in PGN notation."""
 
-var simpleNags = {'1': '!', '2': '?', '3': '!!', '4': '??', '5': '!?', '6': '?!', '7': '&#9633', '8': '&#9632',
+const simpleNags = {'1': '!', '2': '?', '3': '!!', '4': '??', '5': '!?', '6': '?!', '7': '&#9633', '8': '&#9632',
     '11': '=', '13': '&infin;', '14': '&#10866', '15': '&#10865', '16': '&plusmn;', '17': '&#8723',
     '18': '&#43; &minus;', '19': '&minus; &#43;', '36': '&rarr;','142': '&#8979','146': 'N'};
 
@@ -50,12 +50,6 @@ var gameHistory, fenHash, currentPosition;
 const BACKEND_SERVER_PREFIX = 'http://drshivaji.com:3334';
 //const BACKEND_SERVER_PREFIX = "http://localhost:7777";
 
-// remote begin
-var remote_server_prefix = "drshivaji.com:9876";
-//var remote_server_prefix = "localhost:7766";
-var remote_ws = null;
-// remote end
-
 fenHash = {};
 
 currentPosition = {};
@@ -70,6 +64,7 @@ var setupBoardFen = START_FEN;
 var dataTableFen = START_FEN;
 var chessGameType = 0; // 0=Standard ; 1=Chess960
 
+var outputInSan = true;
 
 function removeHighlights() {
     chessground1.setShapes([]);
@@ -133,6 +128,9 @@ var bookDataTable = $('#BookTable').DataTable( {
             d.action = 'get_book_moves';
             d.fen = dataTableFen;
             d.db = '#ref';
+        },
+        'error': function (xhr, error, thrown) {
+            dgtClockStatusEl.html('DbBook Error');
         }
     },
     'columns': [
@@ -198,7 +196,7 @@ var gameDataTable = $('#GameTable').DataTable( {
             d.db = '#ref';
         },
         'error': function (xhr, error, thrown) {
-            console.warn(xhr);
+            dgtClockStatusEl.html('DbGame Error');
         }
     },
     'initComplete': function() {
@@ -361,20 +359,52 @@ function WebExporter(columns) {
     };
 
     this.put_move = function(board, m) {
+        var out_move = '';
         var old_fen = board.fen();
         var tmp_board = new Chess(old_fen, chessGameType);
-        var out_move = tmp_board.move(m);
+        var move = tmp_board.move(m);
         var fen = tmp_board.fen();
         var stripped_fen = stripFen(fen);
-        if (!out_move) {
+        if (move) {
+            if (outputInSan) {
+                out_move = move.san;
+            } else {
+                if (move.flags === tmp_board.FLAGS.KSIDE_CASTLE) {
+                    out_move = tmp_board.turn() === 'b' ? 'e1-g1' : 'e8-g8';
+                } else if (move.flags === tmp_board.FLAGS.QSIDE_CASTLE) {
+                    out_move = tmp_board.turn() === 'b' ? 'e1-c1' : 'e8-c8';
+                } else {
+                    if (move.piece !== tmp_board.PAWN) {
+                        out_move += move.piece.toUpperCase();
+                    }
+                    out_move += move.from;
+                    if ((move.flags.indexOf(tmp_board.FLAGS.CAPTURE) > -1) || (move.flags.indexOf(tmp_board.FLAGS.EP_CAPTURE) > -1)) {
+                        out_move += 'x';
+                    } else {
+                        out_move += '-';
+                    }
+                    out_move += move.to;
+                    if (move.flags.indexOf(tmp_board.FLAGS.PROMOTION) > -1) {
+                        out_move += '=' + move.promotion.toUpperCase();
+                    }
+                    if (tmp_board.in_check()) {
+                        if (tmp_board.in_checkmate()) {
+                            out_move += '#';
+                        } else {
+                            out_move += '+';
+                        }
+                    }
+                }
+            }
+        } else {
             console.warn('put_move error');
             console.log(board.ascii());
             console.log(board.moves());
             console.log(tmp_board.ascii());
             console.log(m);
-            out_move = {'san': 'X' + m.from + m.to};
+            out_move = 'X' + m.from + m.to;
         }
-        this.write_token('<span class="gameMove' + (board.fullmove_number) + '"><a href="#" class="fen" data-fen="' + fen + '" id="' + stripped_fen + '"> ' + figurinizeMove(out_move.san) + ' </a></span>');
+        this.write_token('<span class="gameMove' + (board.fullmove_number) + '"><a href="#" class="fen" data-fen="' + fen + '" id="' + stripped_fen + '"> ' + figurinizeMove(out_move) + ' </a></span>');
     };
 
     this.put_result = function(result) {
@@ -680,8 +710,10 @@ var onSnapEnd = function(source, target) {
     updateCurrentPosition(move, tmpGame);
     updateChessGround();
     updateStatus();
+    /* Remote removed
     $.post('/channel', {action: 'move', fen: currentPosition.fen, source: source, target: target}, function(data) {
     });
+    */
 };
 
 function updateChessGround() {
@@ -1060,9 +1092,20 @@ function getFenToConsole() {
     $('#inputConsole').val(tmpGame.fen());
 }
 
+function toggleBookButton() {
+    $('#book').toggle();
+}
+
+function toggleEngineButton() {
+    $('#engine').toggle();
+}
+
 function toggleConsoleButton() {
-    $('#Console').toggle();
-    $('#Database').toggle();
+    $('#console').toggle();
+}
+
+function toggleDatabaseButton() {
+    $('#database').toggle();
 }
 
 function goToPosition(fen) {
@@ -1121,174 +1164,6 @@ function goBack() {
 function boardFlip() {
     chessground1.toggleOrientation();
 }
-
-// remote begin
-function sendRemoteMsg() {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "text", "payload": $('#remoteText').val()};
-        $("#remoteText").val("");
-        $("#remoteText").focus();
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
-function sendRemoteFen(data) {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "Fen", "move": data.move, "fen": data.fen, "play": data.play};
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
-function sendRemoteGame(fen) {
-    if(remote_ws) {
-        var text_msg_obj = {"event": "Game", "fen": fen};
-        var jmsg = JSON.stringify(text_msg_obj);
-        remote_ws.send(jmsg);
-    } else {
-        console.log('cant send message cause of closed connection!');
-    }
-}
-
-function setInsideRoom() {
-    $('#leaveRoomBtn').removeAttr('disabled').show();
-    $('#SendTextRemoteBtn').removeAttr('disabled');
-    $('#enterRoomBtn').attr('disabled', 'disabled').hide();
-    $('#RemoteRoom').attr('disabled', 'disabled');
-    $('#RemoteNick').attr('disabled', 'disabled');
-    $('#broadcastBtn').removeAttr('disabled');
-
-    $.post('/channel', {action: 'room', room: 'inside'}, function (data) {
-    });
-}
-
-function setOutsideRoom() {
-    $('#leaveRoomBtn').attr('disabled', 'disabled').hide();
-    $('#SendTextRemoteBtn').attr('disabled', 'disabled');
-    $('#enterRoomBtn').removeAttr('disabled').show();
-    $('#RemoteRoom').removeAttr('disabled');
-    $('#RemoteNick').removeAttr('disabled');
-    $('#broadcastBtn').attr('disabled', 'disabled');
-
-    $.post('/channel', {action: 'room', room: 'outside'}, function (data) {
-    });
-}
-
-function leaveRoom() {
-    setOutsideRoom();
-    if(remote_ws) {
-        remote_ws.close();
-    }
-}
-
-function enterRoom() {
-    $.ajax({
-        dataType: 'jsonp',
-        url: 'http://' + remote_server_prefix,
-        data: {
-            room: $('#RemoteRoom').val(),
-            nick: $('#RemoteNick').val()
-        }
-    }).done(function(data) {
-        console.log(data);
-        if(data.result === 'OK') {
-            setInsideRoom();
-
-            remote_ws = new WebSocket("ws://" + remote_server_prefix + "/ws/" + data.client_id);
-
-            remote_ws.onopen = function (event) {
-                console.log("RemoteChessServerSocket opened");
-            };
-
-            remote_ws.onclose = function () {
-                console.log("RemoteChessServerSocket closed");
-                setOutsideRoom();
-            };
-
-            remote_ws.onerror = function (event) {
-                console.warn("RemoteChessServerSocket error");
-                dgtClockStatusEl.html(event.data);
-            };
-
-            remote_ws.onmessage = receive_message;
-        }
-
-    }).fail(function(jqXHR, textStatus) {
-        console.warn('Failed ajax request');
-        console.log(jqXHR);
-        dgtClockStatusEl.html(textStatus);
-    });
-}
-
-function format_username(username) {
-    if(username === $('#RemoteNick').val()) {
-        return '<span style="color: green;">' + username + '</span>';
-    } else {
-        return '<span style="color: red;">' + username + '</span>';
-    }
-}
-
-function receive_message(wsevent) {
-    console.log("received message: " + wsevent.data);
-    var msg_obj = $.parseJSON(wsevent.data);
-    var logging = $('#consoleLogArea');
-    var username = format_username(msg_obj.username);
-    switch (msg_obj.event) {
-        case "join":
-            logging.append('<li>' + username + ' => Joined room ' + msg_obj.payload + '</li>');
-            break;
-        case "leave":
-            logging.append('<li>' + username + ' => Left room ' + msg_obj.payload + '</li>');
-            break;
-        case "nick_list":
-            logging.append('<li>' + username + ' => Current users: ' + msg_obj.payload.toString() + '</li>');
-            break;
-        case "text":
-            logging.append('<li>' + username + ' => ' +  msg_obj.payload + '</li>');
-            break;
-        // picochess events!
-        case 'Clock':
-            logging.append('<li>' + username + ' => Clock: ' + msg_obj.msg + '</li>');
-            break;
-        case 'Light':
-            logging.append('<li>' + username + ' => Light: ' + msg_obj.move + '</li>');
-            break;
-        case 'Clear':
-            logging.append('<li>' + username + ' => Clear' + '</li>');
-            break;
-        case 'Fen':
-            logging.append('<li>' + username + ' => Fen: ' + msg_obj.fen + ' move: ' + msg_obj.move + ' play: ' + msg_obj.play + '</li>');
-            break;
-        case 'Game':
-            logging.append('<li>' + username + ' => NewGame: ' + msg_obj.fen + '</li>');
-            break;
-        case 'Message':
-            logging.append('<li>' + username + ' => Message: ' + msg_obj.msg + '</li>');
-            break;
-        case 'Status':
-            logging.append('<li>' + username + ' => ClockStatus: ' + msg_obj.msg + '</li>');
-            break;
-        case 'Header':
-            logging.append('<li>' + username + ' => Header: ' + msg_obj.headers.toString() + '</li>');
-            break;
-        case 'Title':
-            logging.append('<li>' + username + ' => Title: ' + msg_obj.ip_info.toString() + '</li>');
-            break;
-        case 'Broadcast':
-            logging.append('<li>' + username + ' => Broadcast: ' + msg_obj.msg + 'fen: ' + msg_obj.fen + '</li>');
-            break;
-        default:
-            console.log(msg_obj.event);
-            console.log(msg_obj);
-            console.log(' ');
-    }
-}
-// remote end
 
 function formatEngineOutput(line) {
     if (line.search('depth') > 0 && line.search('currmove') < 0) {
@@ -1399,11 +1274,8 @@ function multiPvIncrease() {
         var new_div_str = "<div id=\"pv_" + window.multipv + "\"  style=\"margin-bottom: 3vh;\"></div>";
         $("#pv_output").append(new_div_str);
 
-        if (!window.StockfishModule) {
-            // Need to restart web worker as its not Chrome
-            stopAnalysis();
-            analyze(true);
-        }
+        stopAnalysis();
+        analyze(true);
     }
 }
 
@@ -1423,11 +1295,8 @@ function multiPvDecrease() {
             }
         }
 
-        if (!window.StockfishModule) {
-            // Need to restart web worker as its not Chrome
-            stopAnalysis();
-            analyze(true);
-        }
+        stopAnalysis();
+        analyze(true);
     }
 }
 
@@ -1455,18 +1324,6 @@ function analyzePressed() {
     analyze(false);
 }
 
-function stockfishPNACLModuleDidLoad() {
-    window.StockfishModule = document.getElementById('stockfish_module');
-    window.StockfishModule.postMessage('uci');
-    $('#analyzeBtn').prop('disabled', false);
-}
-
-function handleCrash(event) {
-    console.warn('Nacl Module crash handler method');
-    console.warn(event);
-    loadNaclStockfish();
-}
-
 function handleMessage(event) {
     var output = formatEngineOutput(event.data);
     if (output && output.pv_index && output.pv_index > 0) {
@@ -1475,25 +1332,9 @@ function handleMessage(event) {
     $('#engineMultiPVStatus').html(window.multipv + " line(s)");
 }
 
-function loadNaclStockfish() {
-    var listener = document.getElementById('listener');
-    listener.addEventListener('load', stockfishPNACLModuleDidLoad, true);
-    listener.addEventListener('message', handleMessage, true);
-    listener.addEventListener('crash', handleCrash, true);
-}
-
 function stopAnalysis() {
-    if (!window.StockfishModule) {
-        if (window.stockfish) {
-            window.stockfish.terminate();
-        }
-    } else {
-        try {
-            window.StockfishModule.postMessage('stop');
-        }
-        catch (err) {
-            console.warn(err);
-        }
+    if (window.stockfish) {
+        window.stockfish.terminate();
     }
 }
 
@@ -1546,17 +1387,16 @@ function analyze(position_update) {
     else {
         moves = getPreviousMoves(currentPosition);
     }
-    if (!window.StockfishModule) {
-        window.stockfish = new Worker('/static/js/stockfish.js');
-        window.stockfish.onmessage = function(event) {
-            handleMessage(event);
-        };
-    }
-    else {
-        if (!window.stockfish) {
-            window.stockfish = StockfishModule;
-        }
-    }
+
+    var wasmSupported = typeof WebAssembly === 'object' && WebAssembly.validate(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+    console.log('wasmSupport:');
+    console.log(wasmSupported);
+    window.stockfish = new Worker(wasmSupported ? '/static/js/stockfish.wasm.js' : '/static/js/stockfish.js');
+
+    window.stockfish.addEventListener('message', function (e) {
+        handleMessage(e);
+    });
+    window.stockfish.postMessage('uci');
 
     var startpos = 'startpos';
     if (setupBoardFen !== START_FEN) {
@@ -1586,18 +1426,11 @@ function goToDGTFen() {
 }
 
 function setTitle(data) {
-    window.ip_info = data;
-    var ip = '';
-    if (window.ip_info.ext_ip) {
-        ip += ' IP: ' + window.ip_info.ext_ip;
+    document.title = 'Webserver Picochess v' + data.version;
+    if(!data.int_ip) {  // no inet found => hide the need-iNet panels
+        $('#book').hide();
+        $('#database').hide();
     }
-    var version = '';
-    if (window.ip_info.version) {
-        version = window.ip_info.version;
-    } else if (window.system_info.version) {
-        version = window.system_info.version;
-    }
-    document.title = 'Webserver Picochess ' + version + ip;
 }
 
 // copied from loadGame()
@@ -1623,11 +1456,13 @@ function getAllInfo() {
     }).fail(function(jqXHR, textStatus) {
         dgtClockStatusEl.html(textStatus);
     });
+    /*
     $.get('/info', {action: 'get_ip_info'}, function(data) {
         setTitle(data);
     }).fail(function(jqXHR, textStatus) {
         dgtClockStatusEl.html(textStatus);
     });
+    */
     $.get('/info', {action: 'get_headers'}, function(data) {
         setHeaders(data);
     }).fail(function(jqXHR, textStatus) {
@@ -1636,7 +1471,6 @@ function getAllInfo() {
     $.get('/info', {action: 'get_clock_text'}, function(data) {
         dgtClockTextEl.html(data);
     }).fail(function(jqXHR, textStatus) {
-        console.warn(textStatus);
         dgtClockStatusEl.html(textStatus);
     });
 }
@@ -1663,14 +1497,12 @@ $('#ClockBtn3').on('click', clockButton3);
 $('#ClockBtn4').on('click', clockButton4);
 $('#ClockLeverBtn').on('click', toggleLeverButton);
 
+$('#bookBtn').on('click', toggleBookButton);
+$('#engineBtn').on('click', toggleEngineButton);
 $('#consoleBtn').on('click', toggleConsoleButton);
-$('#getFenToConsoleBtn').on('click', getFenToConsole);
+$('#databaseBtn').on('click', toggleDatabaseButton);
 
-// remote begin
-$('#enterRoomBtn').on('click', enterRoom);
-$('#leaveRoomBtn').on('click', leaveRoom);
-$('#SendTextRemoteBtn').on('click', sendRemoteMsg);
-// remote end
+$('#getFenToConsoleBtn').on('click', getFenToConsole);
 
 $("#inputConsole").keyup(function(event) {
     if(event.keyCode === 13) {
@@ -1680,27 +1512,11 @@ $("#inputConsole").keyup(function(event) {
 });
 
 $(function() {
-    getAllInfo();
-
     $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
         updateStatus();
     });
     window.engine_lines = {};
     window.multipv = 1;
-
-// remote begin
-    setOutsideRoom();
-    $("#RemoteRoom").keyup(function(event) { remote_send(); } );
-    $("#RemoteNick").keyup(function(event) { remote_send(); } );
-
-    function remote_send() {
-        if ( $("#RemoteRoom").val() !== "" && $("#RemoteNick").val() !== "") {
-            $("#enterRoomBtn").removeAttr("disabled");
-        } else {
-            $("#enterRoomBtn").attr("disabled", "disabled");
-        }
-    }
-// remote end
 
     $(document).keydown(function(e) {
         if (e.keyCode === 39) { //right arrow
@@ -1723,7 +1539,6 @@ $(function() {
         }
         return true;
     });
-    updateStatus();
 
     window.WebSocket = window.WebSocket || window.MozWebSocket || false;
     if (!window.WebSocket) {
@@ -1731,8 +1546,12 @@ $(function() {
     }
     else {
         var ws = new WebSocket('ws://' + location.host + '/event');
-        // Process messages from picochess
-        ws.onmessage = function(e) {
+        ws.onopen = function() {
+            dgtClockStatusEl.html('opened');
+            getAllInfo();
+            goToDGTFen();
+        };
+        ws.onmessage = function(e) { // Process messages from picochess
             var data = JSON.parse(e.data);
             switch (data.event) {
                 case 'Fen':
@@ -1747,17 +1566,16 @@ $(function() {
                     if(data.play === 'review') {
                         highlightBoard(data.move, 'review');
                     }
-                    //sendRemoteFen(data);
                     break;
                 case 'Game':
                     newBoard(data.fen);
-                    //sendRemoteGame(data.fen);
                     break;
                 case 'Message':
                     boardStatusEl.html(data.msg);
                     break;
                 case 'Clock':
                     dgtClockTextEl.html(data.msg);
+                    dgtClockStatusEl.html('');
                     break;
                 case 'Status':
                     dgtClockStatusEl.html(data.msg);
@@ -1777,18 +1595,19 @@ $(function() {
                 case 'Broadcast':
                     boardStatusEl.html(data.msg);
                     break;
+                case 'Notation':
+                    outputInSan = data.san;
+                    break;
                 default:
                     console.warn(data);
             }
         };
+        ws.onerror = function() {
+            dgtClockStatusEl.html('error');
+        };
         ws.onclose = function() {
             dgtClockStatusEl.html('closed');
         };
-    }
-
-    if (navigator.mimeTypes['application/x-pnacl'] !== undefined) {
-        $('#analyzeBtn').prop('disabled', true);
-        loadNaclStockfish();
     }
 
     $.fn.dataTable.ext.errMode = 'throw';
